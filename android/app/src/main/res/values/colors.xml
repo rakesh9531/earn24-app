@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The white background for your splash screen -->
+    <color name="splash_background">#FFFFFF</color>
+
+    <!-- The green color for your "Earn 24" text -->
+    <color name="splash_text_green">#00C853</color>
+</resources>
