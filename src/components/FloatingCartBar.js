@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useCart } from '../context/CartContext';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FloatingCartBar = () => {
   const navigation = useNavigation();
   const { cartItems, totalPhysicalItems  } = useCart();
+  const insets = useSafeAreaInsets();
+
+  const isIos = Platform.OS === 'ios';
+  const tabHeight = isIos 
+    ? (insets.bottom > 0 ? 55 + insets.bottom : 65) 
+    : (insets.bottom > 0 ? 60 + insets.bottom : 65);
+  const bottomPosition = tabHeight + 10;
 
   // --- NEW STATE & ANIMATION LOGIC ---
   const [isVisible, setIsVisible] = useState(false);
@@ -63,7 +71,7 @@ const FloatingCartBar = () => {
   
   // We now wrap the TouchableOpacity in an Animated.View
   return (
-    <Animated.View style={[styles.container, animatedContainerStyle]}>
+    <Animated.View style={[styles.container, animatedContainerStyle, { bottom: bottomPosition }]}>
         <TouchableOpacity 
             style={styles.touchableContent}
             onPress={() => navigation.navigate('Cart')}
@@ -72,7 +80,7 @@ const FloatingCartBar = () => {
                 {cartItems.slice(0, 4).map((item, index) => (
                 <Image
                     key={item.offer_id}
-                    source={{ uri: `http://192.168.0.171:3000${item.main_image_url}` }}
+                    source={{ uri: `https://newapi.earn24.in${item.main_image_url}` }}
                     style={[styles.itemImage, { zIndex: 4 - index, marginLeft: index > 0 ? -15 : 0 }]}
                 />
                 ))}

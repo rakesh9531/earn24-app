@@ -29,7 +29,7 @@
 // const CategoryItem = ({ item }) => (
 //   <TouchableOpacity style={styles.categoryItem}>
 //     <Image 
-//       source={item.image_url ? { uri: `http://192.168.0.171:3000${item.image_url}` } : require('../assets/images/banner.png')} 
+//       source={item.image_url ? { uri: `http://https://newapi.earn24.in${item.image_url}` } : require('../assets/images/banner.png')} 
 //       style={styles.categoryImage} 
 //     />
 //     <Text style={styles.categoryName}>{item.name}</Text>
@@ -316,7 +316,7 @@
 //     onPress={() => navigation.navigate('CategoryProducts', { categoryId: item.id, categoryName: item.name })}
 //   >
 //     <Image 
-//       source={item.image_url ? { uri: `http://192.168.0.171:3000${item.image_url}` } : require('../assets/images/banner.png')} 
+//       source={item.image_url ? { uri: `http://https://newapi.earn24.in${item.image_url}` } : require('../assets/images/banner.png')} 
 //       style={styles.categoryImage} 
 //     />
 //     <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
@@ -731,12 +731,14 @@
 
 
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet, SafeAreaView, FlatList,
-  View, Text, ActivityIndicator, RefreshControl, TouchableOpacity
+  View, Text, ActivityIndicator, RefreshControl, TouchableOpacity, Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { mlmService } from '../services/mlmService';
+import { productService } from '../services/productService';
 import ProductCarousel from '../components/ProductCarousel';
 import FloatingCartBar from '../components/FloatingCartBar';
 import CartIcon from '../components/CartIcon';
@@ -744,10 +746,30 @@ import PincodeModal from '../components/PincodeModal';
 import { usePincode } from '../context/PincodeContext';
 import LocationHeader from '../components/LocationHeader';
 import HomeScreenHeader from '../components/HomeScreenHeader';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const HomeScreen = ({ navigation }) => {
   const { pincode, isLoadingPincode } = usePincode();
   const [isPincodeModalVisible, setIsPincodeModalVisible] = useState(false);
+  const insets = useSafeAreaInsets();
+  
+  const flatListRef = useRef(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const isIos = Platform.OS === 'ios';
+  const tabHeight = isIos 
+    ? (insets.bottom > 0 ? 55 + insets.bottom : 65) 
+    : (insets.bottom > 0 ? 60 + insets.bottom : 65);
+  const scrollTopBottom = tabHeight + 10 + 75; // dynamic offset above FloatingCartBar
+
+  const handleScroll = (event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    setShowScrollTop(offsetY > 400); // Show button when scrolled down 400px
+  };
+
+  const scrollToTop = () => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
   
   const [homeData, setHomeData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -755,6 +777,44 @@ const HomeScreen = ({ navigation }) => {
 
   // --- STATE TO REMEMBER THE SELECTED CATEGORY ---
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+
+  // --- INFINITE SCROLL STATE ---
+  const [extraProducts, setExtraProducts] = useState([]);
+  const [fetchPage, setFetchPage] = useState(1);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Reset pagination whenever category changes
+  useEffect(() => {
+    setExtraProducts([]);
+    setFetchPage(1); 
+    setHasMore(true);
+  }, [selectedCategoryId]);
+
+  const fetchMoreProducts = async () => {
+    // If loading, or reached end, or missing data, do nothing
+    if (isFetchingMore || !hasMore || !selectedCategoryId || !pincode) return;
+    
+    setIsFetchingMore(true);
+    try {
+      const response = await productService.getProductsByCategory(selectedCategoryId, pincode, fetchPage);
+      if (response && response.status && response.data.length > 0) {
+        setExtraProducts(prev => {
+          // Keep a set of IDs we already appended to efficiently filter duplicates
+          const currentIds = new Set(prev.map(p => p.offer_id || p.id));
+          const newItems = response.data.filter(p => !currentIds.has(p.offer_id || p.id));
+          return [...prev, ...newItems];
+        });
+        setFetchPage(prev => prev + 1);
+      } else {
+        setHasMore(false); // No more products from API
+      }
+    } catch (error) {
+      console.error("Error fetching more products:", error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
 
   const loadData = useCallback(async (currentPincode) => {
     if (!currentPincode) return;
@@ -800,11 +860,32 @@ const HomeScreen = ({ navigation }) => {
     if (!homeData?.productSections || !selectedCategoryId) {
         return [];
     }
-    // IMPORTANT: This assumes your backend API adds a `parent_category_id` to each section.
-    return homeData.productSections.filter(
+    const sections = homeData.productSections.filter(
         section => section.parent_category_id === selectedCategoryId
     );
-  }, [homeData, selectedCategoryId]);
+
+    // Merge the extra fetched products into the first matching section
+    if (sections.length > 0) {
+      const firstSection = { ...sections[0] };
+      const combined = [...firstSection.products, ...extraProducts];
+      
+      // Deduplicate the combined list
+      const uniqueProducts = [];
+      const seenIds = new Set();
+      for (const p of combined) {
+        const id = p.offer_id || p.id;
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          uniqueProducts.push(p);
+        }
+      }
+      
+      firstSection.products = uniqueProducts;
+      return [firstSection, ...sections.slice(1)];
+    }
+
+    return sections;
+  }, [homeData, selectedCategoryId, extraProducts]);
 
   if (isLoadingPincode) {
     return <View style={styles.centeredLoader}><ActivityIndicator size="large" color="#0CA201" /></View>;
@@ -815,7 +896,11 @@ const HomeScreen = ({ navigation }) => {
       key={item.id}
       section={item}
       onProductPress={(product) => navigation.navigate('ProductDetails', { product })}
-      onSeeAllPress={(s) => navigation.navigate('CategoryProducts', { categoryId: s.id, categoryName: s.title.replace('Best in ', '') })}
+      onSeeAllPress={(s) => navigation.navigate('CategoryProducts', { 
+        // Pass the actual category ID, not the Product Section ID
+        categoryId: s.category_id || s.parent_category_id || selectedCategoryId, 
+        categoryName: s.title.replace('Best in ', '') 
+      })}
     />
   );
 
@@ -838,6 +923,9 @@ const HomeScreen = ({ navigation }) => {
       ) : homeData && (
         <>
           <FlatList
+            ref={flatListRef}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             // --- USE THE NEW FILTERED LIST ---
             data={filteredProductSections}
             renderItem={renderProductCarousel}
@@ -854,10 +942,20 @@ const HomeScreen = ({ navigation }) => {
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
+            onEndReached={fetchMoreProducts}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              isFetchingMore ? <ActivityIndicator size="large" color="#0CA201" style={{ marginVertical: 20 }} /> : null
+            }
             refreshControl={
               <RefreshControl refreshing={isLoading} onRefresh={() => loadData(pincode)} colors={["#0CA201"]} />
             }
           />
+          {showScrollTop && (
+            <TouchableOpacity style={[styles.scrollTopButton, { bottom: scrollTopBottom }]} onPress={scrollToTop}>
+              <Icon name="arrow-up" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
           <FloatingCartBar />
         </>
       )}
@@ -871,6 +969,22 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 80 },
   errorText: { fontSize: 16, color: '#D32F2F', textAlign: 'center', marginBottom: 15 },
   retryText: { fontSize: 16, color: '#007bff', fontWeight: 'bold' },
+  scrollTopButton: {
+    position: 'absolute',
+    bottom: 90, // Places it just above the FloatingCartBar
+    right: 20,
+    backgroundColor: '#0CA201',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
 });
 
 export default HomeScreen;

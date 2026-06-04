@@ -10,7 +10,7 @@
 // //     <View style={styles.categoryImageContainer}>
 // //       <Image 
 // //         source={item.image_url 
-// //             ? { uri: `http://192.168.0.171:3000${item.image_url}` } 
+// //             ? { uri: `http://https://newapi.earn24.in${item.image_url}` } 
 // //             : require('../assets/images/banner.png')
 // //         } 
 // //         style={styles.categoryImage} 
@@ -53,7 +53,7 @@
 // //                 {banner.image_url && (
 // //                   <View style={styles.imageContainer}>
 // //                     <Image
-// //                       source={{ uri: `http://192.168.0.171:3000${banner.image_url}` }} 
+// //                       source={{ uri: `http://https://newapi.earn24.in${banner.image_url}` }} 
 // //                       style={styles.bannerImage}
 // //                     />
 // //                   </View>
@@ -216,7 +216,7 @@
 // //     <View style={styles.categoryImageContainer}>
 // //       <Image 
 // //         source={item.image_url 
-// //             ? { uri: `http://192.168.0.171:3000${item.image_url}` } 
+// //             ? { uri: `http://https://newapi.earn24.in${item.image_url}` } 
 // //             : require('../assets/images/banner.png')
 // //         } 
 // //         style={styles.categoryImage} 
@@ -265,7 +265,7 @@
 // //                 {banner.image_url && (
 // //                   <View style={styles.imageContainer}>
 // //                     <Image
-// //                       source={{ uri: `http://192.168.0.171:3000${banner.image_url}` }} 
+// //                       source={{ uri: `http://https://newapi.earn24.in${banner.image_url}` }} 
 // //                       style={styles.bannerImage}
 // //                     />
 // //                   </View>
@@ -462,7 +462,7 @@
 //     <View style={styles.categoryImageContainer}>
 //       <Image 
 //         source={item.image_url 
-//             ? { uri: `http://192.168.0.171:3000${item.image_url}` } 
+//             ? { uri: `http://https://newapi.earn24.in${item.image_url}` } 
 //             : require('../assets/images/banner.png')
 //         } 
 //         style={styles.categoryImage} 
@@ -523,7 +523,7 @@
 //                 {banner.image_url && (
 //                   <View style={styles.imageContainer}>
 //                     <Image
-//                       source={{ uri: `http://192.168.0.171:3000${banner.image_url}` }} 
+//                       source={{ uri: `http://https://newapi.earn24.in${banner.image_url}` }} 
 //                       style={styles.bannerImage}
 //                     />
 //                   </View>
@@ -635,7 +635,7 @@
 //     <View style={styles.categoryImageContainer}>
 //       <Image 
 //         source={item.image_url 
-//             ? { uri: `http://192.168.0.171:3000${item.image_url}` } 
+//             ? { uri: `http://https://newapi.earn24.in${item.image_url}` } 
 //             : require('../assets/images/banner.png')
 //         } 
 //         style={styles.categoryImage} 
@@ -683,7 +683,7 @@
 //               onPress={() => handleBannerPress(banner)}
 //             >
 //               <Image
-//                 source={{ uri: `http://192.168.0.171:3000${banner.image_url}` }} 
+//                 source={{ uri: `http://https://newapi.earn24.in${banner.image_url}` }} 
 //                 style={styles.bannerImage}
 //               />
 //             </TouchableOpacity>
@@ -885,7 +885,7 @@
 //     <View style={styles.subCategoryImageContainer}>
 //       <Image 
 //         source={item.image_url 
-//             ? { uri: `http://192.168.0.171:3000${item.image_url}` } 
+//             ? { uri: `http://https://newapi.earn24.in${item.image_url}` } 
 //             : require('../assets/images/banner.png')
 //         } 
 //         style={styles.subCategoryImage} 
@@ -953,7 +953,7 @@
 //               onPress={() => handleBannerPress(banner)}
 //             >
 //               <Image
-//                 source={{ uri: `http://192.168.0.171:3000${banner.image_url}` }} 
+//                 source={{ uri: `http://https://newapi.earn24.in${banner.image_url}` }} 
 //                 style={styles.bannerImage}
 //               />
 //             </TouchableOpacity>
@@ -1110,12 +1110,12 @@ const SIZES = {
 const SubCategoryItem = ({ item, navigation }) => (
   <TouchableOpacity 
     style={styles.subCategoryItem} 
-    onPress={() => navigation.navigate('CategoryProducts', { categoryId: item.id, categoryName: item.name })}
+    onPress={() => navigation.navigate('CategoryProducts', { categoryId: item.id, categoryName: item.name, isSubcategory: true })}
   >
     <View style={styles.subCategoryImageContainer}>
       <Image 
         source={item.image_url 
-            ? { uri: `http://192.168.0.171:3000${item.image_url}` } 
+            ? { uri: `https://newapi.earn24.in${item.image_url}` } 
             : require('../assets/images/banner.png')
         } 
         style={styles.subCategoryImage} 
@@ -1176,7 +1176,7 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
               onPress={() => handleBannerPress(banner)}
             >
               <Image
-                source={{ uri: `http://192.168.0.171:3000${banner.image_url}` }} 
+                source={{ uri: `https://newapi.earn24.in${banner.image_url}` }} 
                 style={styles.bannerImage}
               />
             </TouchableOpacity>

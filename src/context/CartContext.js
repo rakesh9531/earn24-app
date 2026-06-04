@@ -830,10 +830,260 @@
 
 
 
+// Working code before payment gateway
+
+// import React, { createContext, useState, useContext, useMemo, useCallback, useEffect } from 'react';
+// import { useFocusEffect } from '@react-navigation/native';
+// import { useAuth } from './AuthContext';
+// import { usePincode } from './PincodeContext';
+// import { cartService } from '../services/cartService';
+// import { settingsService } from '../services/settingsService';
+
+// export const CartContext = createContext();
+
+// export const CartProvider = ({ children }) => {
+//   const { user } = useAuth();
+//   const { pincode } = usePincode();
+//   const [cartItems, setCartItems] = useState([]);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [selectedItemIds, setSelectedItemIds] = useState({});
+//   const [deliverySettings, setDeliverySettings] = useState(null);
+
+//   useEffect(() => {
+//     const fetchSettings = async () => {
+//       if (user) { // Only fetch settings if a user is logged in
+//         try {
+//           const response = await settingsService.getDeliveryRules();
+//           if (response.status) {
+//             setDeliverySettings(response.data);
+//             console.log("CartContext: Delivery settings loaded successfully.");
+//           }
+//         } catch (e) {
+//           console.error("CartContext: Could not fetch delivery settings.", e.message);
+//         }
+//       }
+//     };
+//     fetchSettings();
+//   }, [user]);
+
+//   // --- REFACTORED LOGIC FOR BUG FIX ---
+
+//   // This is a "safe" refresh that only updates item data (like quantity or availability)
+//   // but does NOT touch the user's selections.
+//   const refreshCartData = useCallback(async () => {
+//     if (!user || !pincode) return;
+//     try {
+//       const response = await cartService.getCart(pincode);
+//       if (response.status && Array.isArray(response.data)) {
+//         setCartItems(response.data);
+//       }
+//     } catch (error) {
+//       console.error("Failed to refresh cart data:", error.response?.data?.message || error.message);
+//     }
+//   }, [user, pincode]);
+
+//   // This effect handles the INITIAL load and RESETS selections when user/pincode changes.
+//   useFocusEffect(
+//     useCallback(() => {
+//       const initialLoadCart = async () => {
+//         if (!user || !pincode) {
+//           setCartItems([]);
+//           setSelectedItemIds({});
+//           setIsLoading(false);
+//           return;
+//         }
+//         setIsLoading(true);
+//         try {
+//           const response = await cartService.getCart(pincode);
+//           if (response.status && Array.isArray(response.data)) {
+//             const items = response.data;
+//             setCartItems(items);
+//             // Set default selections ONLY on this initial load.
+//             const initialSelection = {};
+//             items.forEach(item => {
+//               if (item.is_available) {
+//                 initialSelection[item.cart_item_id] = true;
+//               }
+//             });
+//             setSelectedItemIds(initialSelection);
+//           } else {
+//             setCartItems([]);
+//             setSelectedItemIds({});
+//           }
+//         } catch (error) {
+//           console.error("Failed to perform initial cart load:", error.response?.data?.message || error.message);
+//           setCartItems([]);
+//           setSelectedItemIds({});
+//         } finally {
+//           setIsLoading(false);
+//         }
+//       };
+//       initialLoadCart();
+//     }, [user, pincode])
+//   );
+  
+//   // SAFETY NET: Automatically deselects any item if it becomes unavailable.
+//   useEffect(() => {
+//       const newSelections = {...selectedItemIds};
+//       let selectionWasChanged = false;
+//       cartItems.forEach(item => {
+//           if(!item.is_available && newSelections[item.cart_item_id]) {
+//               newSelections[item.cart_item_id] = false;
+//               selectionWasChanged = true;
+//           }
+//       });
+//       if(selectionWasChanged) {
+//           setSelectedItemIds(newSelections);
+//       }
+//   }, [cartItems]);
+
+//   const toggleItemSelected = (cartItemId) => {
+//     setSelectedItemIds(prev => ({
+//       ...prev,
+//       [cartItemId]: !prev[cartItemId]
+//     }));
+//   };
+  
+//   const addToCart = async (product, quantity) => {
+//     if (!user) {
+//         alert('Please log in to add items to your cart.');
+//         return false;
+//     }
+//     try {
+//       await cartService.addItem({ sellerProductId: product.offer_id, quantity: quantity });
+//       await refreshCartData(); // Use the safe refresh function
+//       return true;
+//     } catch (error) {
+//       console.error("Failed to add to cart:", error);
+//       alert('Could not add item to cart.');
+//       return false;
+//     }
+//   };
+  
+//   const updateQuantity = async (cartItemId, newQuantity) => {
+//       const originalItems = [...cartItems];
+//       setCartItems(prevItems => prevItems.map(item => item.cart_item_id === cartItemId ? { ...item, quantity: newQuantity } : item ));
+//       try {
+//         await cartService.updateItem(cartItemId, newQuantity);
+//         await refreshCartData(); // Use the safe refresh function
+//       } catch (error) {
+//           console.error("Failed to update quantity:", error);
+//           setCartItems(originalItems);
+//       }
+//   };
+
+//   const removeFromCart = async (cartItemId) => {
+//     const originalItems = [...cartItems];
+//     try {
+//       setCartItems(prevItems => prevItems.filter(item => item.cart_item_id !== cartItemId));
+//       await cartService.removeItem(cartItemId);
+//     } catch (error) {
+//       console.error("Failed to remove from cart:", error);
+//       setCartItems(originalItems);
+//     }
+//   };
+
+//   const clearCart = async () => {
+//     const originalItems = [...cartItems];
+//     try {
+//         setCartItems([]);
+//         setSelectedItemIds({});
+//         await cartService.clearCart();
+//     } catch (error) {
+//         console.error("Failed to clear cart:", error);
+//         setCartItems(originalItems);
+//     }
+//   };
+
+//   // --- All `useMemo` calculation blocks are correct and need no changes ---
+//   const { totalPhysicalItems, subtotal, totalBvInCart, selectedItemsForCheckout } = useMemo(() => {
+//     const physicalTotal = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+//     const itemsForCheckout = cartItems.filter(item => item.is_available && selectedItemIds[item.cart_item_id]);
+    
+//     let currentSubtotal = 0;
+//     let totalBv = 0;
+//     for (const item of itemsForCheckout) {
+//       currentSubtotal += parseFloat(item.selling_price) * item.quantity;
+//       totalBv += parseFloat(item.bv_earned || 0) * item.quantity;
+//     }
+    
+//     return { 
+//       totalPhysicalItems: physicalTotal, 
+//       subtotal: currentSubtotal, 
+//       totalBvInCart: totalBv,
+//       selectedItemsForCheckout: itemsForCheckout
+//     };
+//   }, [cartItems, selectedItemIds]);
+
+//   const deliveryFee = useMemo(() => {
+//     if (subtotal === 0 || !deliverySettings) {
+//       return 0;
+//     }
+//     return (totalBvInCart >= deliverySettings.threshold) 
+//       ? deliverySettings.special 
+//       : deliverySettings.standard;
+//   }, [totalBvInCart, subtotal, deliverySettings]);
+
+//   const totalAmount = subtotal + deliveryFee;
+
+//   const deliveryIncentive = useMemo(() => {
+//     if (!deliverySettings || deliverySettings.special !== 0 || subtotal === 0) {
+//       return null;
+//     }
+//     const bvNeeded = deliverySettings.threshold - totalBvInCart;
+//     if (bvNeeded <= 0) {
+//       return null;
+//     }
+//     const progress = (totalBvInCart / deliverySettings.threshold) * 100;
+//     return {
+//       bvNeeded,
+//       threshold: deliverySettings.threshold,
+//       progress: Math.min(progress, 100),
+//     };
+//   }, [totalBvInCart, subtotal, deliverySettings]);
+
+//   const value = {
+//     cartItems,
+//     isLoading,
+//     totalPhysicalItems,
+//     subtotal,
+//     totalBvInCart,
+//     deliveryFee,
+//     totalAmount,
+//     deliveryIncentive,
+//     selectedItemIds,
+//     toggleItemSelected,
+//     selectedItemsForCheckout,
+//     // Note: We don't need to export fetchCart/initialLoadCart anymore
+//     addToCart,
+//     updateQuantity,
+//     removeFromCart,
+//     clearCart,
+//   };
+
+//   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+// };
+
+// export const useCart = () => {
+//   return useContext(CartContext);
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 import React, { createContext, useState, useContext, useMemo, useCallback, useEffect } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+// REMOVED useFocusEffect as it's not suitable for Context Providers
 import { useAuth } from './AuthContext';
 import { usePincode } from './PincodeContext';
 import { cartService } from '../services/cartService';
@@ -842,21 +1092,21 @@ import { settingsService } from '../services/settingsService';
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth(); // Ensure we get 'token' to check auth status
   const { pincode } = usePincode();
   const [cartItems, setCartItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Default to false to avoid spinner on startup if logged out
   const [selectedItemIds, setSelectedItemIds] = useState({});
   const [deliverySettings, setDeliverySettings] = useState(null);
 
+  // 1. Load Delivery Settings
   useEffect(() => {
     const fetchSettings = async () => {
-      if (user) { // Only fetch settings if a user is logged in
+      if (token) { 
         try {
           const response = await settingsService.getDeliveryRules();
           if (response.status) {
             setDeliverySettings(response.data);
-            console.log("CartContext: Delivery settings loaded successfully.");
           }
         } catch (e) {
           console.error("CartContext: Could not fetch delivery settings.", e.message);
@@ -864,65 +1114,70 @@ export const CartProvider = ({ children }) => {
       }
     };
     fetchSettings();
-  }, [user]);
+  }, [token]);
 
-  // --- REFACTORED LOGIC FOR BUG FIX ---
-
-  // This is a "safe" refresh that only updates item data (like quantity or availability)
-  // but does NOT touch the user's selections.
+  // 2. Helper: Safe Refresh (Does NOT reset selections)
   const refreshCartData = useCallback(async () => {
-    if (!user || !pincode) return;
+    if (!token || !pincode) return;
     try {
       const response = await cartService.getCart(pincode);
       if (response.status && Array.isArray(response.data)) {
         setCartItems(response.data);
       }
     } catch (error) {
-      console.error("Failed to refresh cart data:", error.response?.data?.message || error.message);
+      console.error("Failed to refresh cart data:", error.message);
     }
-  }, [user, pincode]);
+  }, [token, pincode]);
 
-  // This effect handles the INITIAL load and RESETS selections when user/pincode changes.
-  useFocusEffect(
-    useCallback(() => {
-      const initialLoadCart = async () => {
-        if (!user || !pincode) {
-          setCartItems([]);
-          setSelectedItemIds({});
-          setIsLoading(false);
-          return;
-        }
-        setIsLoading(true);
-        try {
-          const response = await cartService.getCart(pincode);
-          if (response.status && Array.isArray(response.data)) {
-            const items = response.data;
-            setCartItems(items);
-            // Set default selections ONLY on this initial load.
-            const initialSelection = {};
-            items.forEach(item => {
-              if (item.is_available) {
-                initialSelection[item.cart_item_id] = true;
-              }
-            });
-            setSelectedItemIds(initialSelection);
-          } else {
-            setCartItems([]);
-            setSelectedItemIds({});
+  // 3. Helper: Full Initial Load (Resets selections)
+  const initialLoadCart = useCallback(async () => {
+    // SECURITY CHECK: Don't fetch if no token
+    if (!token || !pincode) {
+      setCartItems([]);
+      setSelectedItemIds({});
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await cartService.getCart(pincode);
+      if (response.status && Array.isArray(response.data)) {
+        const items = response.data;
+        setCartItems(items);
+        
+        // Select all available items by default
+        const initialSelection = {};
+        items.forEach(item => {
+          if (item.is_available) {
+            initialSelection[item.cart_item_id] = true;
           }
-        } catch (error) {
-          console.error("Failed to perform initial cart load:", error.response?.data?.message || error.message);
-          setCartItems([]);
-          setSelectedItemIds({});
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      initialLoadCart();
-    }, [user, pincode])
-  );
-  
-  // SAFETY NET: Automatically deselects any item if it becomes unavailable.
+        });
+        setSelectedItemIds(initialSelection);
+      } else {
+        setCartItems([]);
+        setSelectedItemIds({});
+      }
+    } catch (error) {
+      // Handle Token Expiry Gracefully
+      if (error.response && error.response.status === 401) {
+        console.log("Token expired during cart load.");
+        // Optionally: you can clear user state here if needed
+      } else {
+        console.error("Failed to perform initial cart load:", error.message);
+      }
+      setCartItems([]);
+      setSelectedItemIds({});
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, pincode]);
+
+  // 4. Trigger Load on User/Pincode Change
+  useEffect(() => {
+    initialLoadCart();
+  }, [initialLoadCart]);
+
+  // 5. Safety Net: Unselect items if they become unavailable
   useEffect(() => {
       const newSelections = {...selectedItemIds};
       let selectionWasChanged = false;
@@ -937,6 +1192,8 @@ export const CartProvider = ({ children }) => {
       }
   }, [cartItems]);
 
+  // --- ACTIONS ---
+
   const toggleItemSelected = (cartItemId) => {
     setSelectedItemIds(prev => ({
       ...prev,
@@ -945,13 +1202,13 @@ export const CartProvider = ({ children }) => {
   };
   
   const addToCart = async (product, quantity) => {
-    if (!user) {
+    if (!token) {
         alert('Please log in to add items to your cart.');
         return false;
     }
     try {
       await cartService.addItem({ sellerProductId: product.offer_id, quantity: quantity });
-      await refreshCartData(); // Use the safe refresh function
+      await refreshCartData(); 
       return true;
     } catch (error) {
       console.error("Failed to add to cart:", error);
@@ -962,13 +1219,14 @@ export const CartProvider = ({ children }) => {
   
   const updateQuantity = async (cartItemId, newQuantity) => {
       const originalItems = [...cartItems];
+      // Optimistic UI Update
       setCartItems(prevItems => prevItems.map(item => item.cart_item_id === cartItemId ? { ...item, quantity: newQuantity } : item ));
       try {
         await cartService.updateItem(cartItemId, newQuantity);
-        await refreshCartData(); // Use the safe refresh function
+        await refreshCartData(); 
       } catch (error) {
           console.error("Failed to update quantity:", error);
-          setCartItems(originalItems);
+          setCartItems(originalItems); // Revert on failure
       }
   };
 
@@ -983,19 +1241,28 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const removeOrderedItems = useCallback((orderedIds) => {
+    setCartItems(prev => prev.filter(item => !orderedIds.includes(item.cart_item_id)));
+    setSelectedItemIds(prev => {
+        const newSelections = { ...prev };
+        orderedIds.forEach(id => {
+            delete newSelections[id];
+        });
+        return newSelections;
+    });
+  }, []);
+
   const clearCart = async () => {
-    const originalItems = [...cartItems];
     try {
         setCartItems([]);
         setSelectedItemIds({});
         await cartService.clearCart();
     } catch (error) {
         console.error("Failed to clear cart:", error);
-        setCartItems(originalItems);
     }
   };
 
-  // --- All `useMemo` calculation blocks are correct and need no changes ---
+  // --- CALCULATIONS ---
   const { totalPhysicalItems, subtotal, totalBvInCart, selectedItemsForCheckout } = useMemo(() => {
     const physicalTotal = cartItems.reduce((sum, item) => sum + item.quantity, 0);
     const itemsForCheckout = cartItems.filter(item => item.is_available && selectedItemIds[item.cart_item_id]);
@@ -1054,11 +1321,12 @@ export const CartProvider = ({ children }) => {
     selectedItemIds,
     toggleItemSelected,
     selectedItemsForCheckout,
-    // Note: We don't need to export fetchCart/initialLoadCart anymore
     addToCart,
     updateQuantity,
     removeFromCart,
     clearCart,
+    removeOrderedItems,
+    refreshCart: refreshCartData, // Export this so Screens can pull latest data
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

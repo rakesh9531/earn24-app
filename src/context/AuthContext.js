@@ -152,9 +152,80 @@
 
 
 
+// import React, { createContext, useState, useEffect, useContext } from 'react';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { setAuthToken } from '../components/api'; // Import from your api.js
+
+// const TOKEN_KEY = 'user_token';
+// const USER_KEY = 'user_data';
+
+// export const AuthContext = createContext();
+
+// export const AuthProvider = ({ children }) => {
+//     const [user, setUser] = useState(null);
+//     const [isLoading, setIsLoading] = useState(true);
+
+//     useEffect(() => {
+//         const loadUserFromStorage = async () => {
+//             try {
+//                 const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
+//                 const storedUser = await AsyncStorage.getItem(USER_KEY);
+//                 if (storedToken && storedUser) {
+//                     setAuthToken(storedToken); // Sync API client on app start
+//                     setUser(JSON.parse(storedUser));
+//                 }
+//             } catch (e) {
+//                 console.error("AuthContext: Failed to load user from storage.", e);
+//             } finally {
+//                 setIsLoading(false);
+//             }
+//         };
+//         loadUserFromStorage();
+//     }, []);
+
+//     const login = async (userData, userToken) => {
+//         try {
+//             await Promise.all([
+//                 AsyncStorage.setItem(TOKEN_KEY, userToken),
+//                 AsyncStorage.setItem(USER_KEY, JSON.stringify(userData))
+//             ]);
+//             setAuthToken(userToken); // Actively set the token in the API client
+//             setUser(userData);
+//         } catch (e) {
+//             console.error("AuthContext: Failed to save auth data.", e);
+//         }
+//     };
+
+//     const logout = async () => {
+//         try {
+//             await Promise.all([
+//                 AsyncStorage.removeItem(TOKEN_KEY),
+//                 AsyncStorage.removeItem(USER_KEY)
+//             ]);
+//             setAuthToken(null); // Actively clear the token from the API client
+//             setUser(null);
+//         } catch (e) {
+//             console.error("AuthContext: Failed to clear auth data.", e);
+//         }
+//     };
+
+//     return (
+//         <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+//             {children}
+//         </AuthContext.Provider>
+//     );
+// };
+
+// export const useAuth = () => useContext(AuthContext);
+
+
+
+
+
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setAuthToken } from '../components/api'; // Import from your api.js
+import { setAuthToken } from '../components/api';
 
 const TOKEN_KEY = 'user_token';
 const USER_KEY = 'user_data';
@@ -163,6 +234,8 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    // 1. ADD TOKEN STATE
+    const [token, setToken] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -170,8 +243,12 @@ export const AuthProvider = ({ children }) => {
             try {
                 const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
                 const storedUser = await AsyncStorage.getItem(USER_KEY);
+
                 if (storedToken && storedUser) {
-                    setAuthToken(storedToken); // Sync API client on app start
+                    setAuthToken(storedToken);
+
+                    // 2. SET STATE ON LOAD
+                    setToken(storedToken);
                     setUser(JSON.parse(storedUser));
                 }
             } catch (e) {
@@ -189,7 +266,11 @@ export const AuthProvider = ({ children }) => {
                 AsyncStorage.setItem(TOKEN_KEY, userToken),
                 AsyncStorage.setItem(USER_KEY, JSON.stringify(userData))
             ]);
-            setAuthToken(userToken); // Actively set the token in the API client
+
+            setAuthToken(userToken);
+
+            // 3. SET STATE ON LOGIN
+            setToken(userToken);
             setUser(userData);
         } catch (e) {
             console.error("AuthContext: Failed to save auth data.", e);
@@ -202,20 +283,23 @@ export const AuthProvider = ({ children }) => {
                 AsyncStorage.removeItem(TOKEN_KEY),
                 AsyncStorage.removeItem(USER_KEY)
             ]);
-            setAuthToken(null); // Actively clear the token from the API client
+
+            setAuthToken(null);
+
+            // 4. CLEAR STATE ON LOGOUT
+            setToken(null);
             setUser(null);
         } catch (e) {
             console.error("AuthContext: Failed to clear auth data.", e);
         }
     };
 
+    // 5. PASS TOKEN IN VALUE
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
 export const useAuth = () => useContext(AuthContext);
-
-

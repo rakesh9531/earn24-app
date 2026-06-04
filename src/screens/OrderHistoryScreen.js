@@ -43,8 +43,8 @@ const OrderHistoryScreen = ({ navigation }) => {
                 data={orders}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    <OrderCard 
-                        order={item} 
+                    <OrderCard
+                        order={item}
                         onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
                     />
                 )}

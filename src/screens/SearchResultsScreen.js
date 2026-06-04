@@ -32,8 +32,8 @@
 // //             setIsLoading(true);
 // //             try {
 // //                 // Your backend API must be able to handle these parameters
-// //                 const response = await productService.search({ 
-// //                     query, 
+// //                 const response = await productService.search({
+// //                     query,
 // //                     ...appliedFilters,
 // //                     sortBy: appliedSortOption
 // //                 });
@@ -61,16 +61,16 @@
 // //     return (
 // //         <SafeAreaView style={styles.container}>
 // //             <View style={styles.filterBar}>
-// //                 <TouchableOpacity 
-// //                     style={styles.actionButton} 
+// //                 <TouchableOpacity
+// //                     style={styles.actionButton}
 // //                     onPress={() => navigation.navigate('Filter', { currentFilters: appliedFilters })}
 // //                 >
 // //                     <Icon name="filter-outline" size={20} color="#333" />
 // //                     <Text style={styles.actionButtonText}>Filter</Text>
 // //                 </TouchableOpacity>
-                
-// //                 <TouchableOpacity 
-// //                     style={styles.actionButton} 
+
+// //                 <TouchableOpacity
+// //                     style={styles.actionButton}
 // //                     onPress={() => setIsSortModalVisible(true)}
 // //                 >
 // //                     <Icon name="swap-vertical-outline" size={20} color="#333" />
@@ -132,20 +132,6 @@
 
 // // export default SearchResultsScreen;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // import React, { useState, useEffect } from 'react';
 // import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 // import { useRoute, useNavigation } from '@react-navigation/native';
@@ -180,8 +166,8 @@
 
 //             setIsLoading(true);
 //             try {
-//                 const response = await productService.search({ 
-//                     query, 
+//                 const response = await productService.search({
+//                     query,
 //                     ...appliedFilters,
 //                     sortBy: appliedSortOption
 //                 });
@@ -212,16 +198,16 @@
 //     return (
 //         <SafeAreaView style={styles.container}>
 //             <View style={styles.filterBar}>
-//                 <TouchableOpacity 
-//                     style={styles.actionButton} 
+//                 <TouchableOpacity
+//                     style={styles.actionButton}
 //                     onPress={() => navigation.navigate('Filter', { currentFilters: appliedFilters })}
 //                 >
 //                     <Icon name="filter-outline" size={20} color="#333" />
 //                     <Text style={styles.actionButtonText}>Filter</Text>
 //                 </TouchableOpacity>
-                
-//                 <TouchableOpacity 
-//                     style={styles.actionButton} 
+
+//                 <TouchableOpacity
+//                     style={styles.actionButton}
 //                     onPress={() => setIsSortModalVisible(true)}
 //                 >
 //                     <Icon name="swap-vertical-outline" size={20} color="#333" />
@@ -261,21 +247,16 @@
 
 // export default SearchResultsScreen;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { productService } from '../services';
@@ -283,159 +264,193 @@ import ProductCard from '../components/ProductCard'; // Your existing ProductCar
 import SortModal from '../components/SortModal';
 
 const SearchResultsScreen = () => {
-    const route = useRoute();
-    const navigation = useNavigation();
-    const { query } = route.params;
+  const route = useRoute();
+  const navigation = useNavigation();
+  const { query } = route.params;
 
-    const [products, setProducts] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [appliedFilters, setAppliedFilters] = useState({});
-    const [isSortModalVisible, setIsSortModalVisible] = useState(false);
-    const [appliedSortOption, setAppliedSortOption] = useState('popularity');
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [appliedFilters, setAppliedFilters] = useState({});
+  const [isSortModalVisible, setIsSortModalVisible] = useState(false);
+  const [appliedSortOption, setAppliedSortOption] = useState('popularity');
 
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-    const performSearch = useCallback(async (pageNum = 1, isNewSearch = true) => {
-        if (isNewSearch) {
-            setIsLoading(true);
-            setProducts([]);
-        } else {
-            setIsLoadingMore(true);
+  const performSearch = useCallback(
+    async (pageNum = 1, isNewSearch = true) => {
+      if (isNewSearch) {
+        setIsLoading(true);
+        setProducts([]);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      try {
+        const { productService } = require('../services/productService');
+        const response = await productService.search({
+          query,
+          ...appliedFilters,
+          sortBy: appliedSortOption,
+          page: pageNum,
+        });
+
+        if (response.status && response.data) {
+          if (isNewSearch) {
+            setProducts(response.data.products);
+          } else {
+            setProducts(prevProducts => [
+              ...prevProducts,
+              ...response.data.products,
+            ]);
+          }
+          setTotalPages(response.data.pagination.totalPages);
         }
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [query, appliedFilters, appliedSortOption],
+  );
 
-        try {
-            const { productService } = require('../services/productService');
-            const response = await productService.search({ 
-                query, 
-                ...appliedFilters,
-                sortBy: appliedSortOption,
-                page: pageNum,
-            });
-
-            if (response.status && response.data) {
-                if (isNewSearch) {
-                    setProducts(response.data.products);
-                } else {
-                    setProducts(prevProducts => [...prevProducts, ...response.data.products]);
-                }
-                setTotalPages(response.data.pagination.totalPages);
-            }
-        } catch (error) {
-            console.error("Search failed:", error);
-        } finally {
-            setIsLoading(false);
-            setIsLoadingMore(false);
-        }
-    }, [query, appliedFilters, appliedSortOption]);
-
-    useEffect(() => {
-        if (route.params?.newFilters) {
-            setAppliedFilters(route.params.newFilters);
-        }
-    }, [route.params?.newFilters]);
-    
-    useEffect(() => {
-        setPage(1);
-        performSearch(1, true);
-    }, [query, appliedFilters, appliedSortOption]);
-
-    const handleApplySort = (selectedOption) => {
-        setAppliedSortOption(selectedOption);
-        setIsSortModalVisible(false);
-    };
-
-    const handleLoadMore = () => {
-        if (!isLoadingMore && page < totalPages) {
-            const nextPage = page + 1;
-            setPage(nextPage);
-            performSearch(nextPage, false);
-        }
-    };
-    
-    const renderFooter = () => {
-        if (!isLoadingMore) return null;
-        return <ActivityIndicator style={{ marginVertical: 20 }} />;
-    };
-
-    if (isLoading) {
-        return <View style={styles.centered}><ActivityIndicator size="large" color="#0CA201" /></View>;
+  useEffect(() => {
+    if (route.params?.newFilters) {
+      setAppliedFilters(route.params.newFilters);
     }
+  }, [route.params?.newFilters]);
 
+  useEffect(() => {
+    setPage(1);
+    performSearch(1, true);
+  }, [query, appliedFilters, appliedSortOption]);
+
+  const handleApplySort = selectedOption => {
+    setAppliedSortOption(selectedOption);
+    setIsSortModalVisible(false);
+  };
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && page < totalPages) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      performSearch(nextPage, false);
+    }
+  };
+
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+    return <ActivityIndicator style={{ marginVertical: 20 }} />;
+  };
+
+  if (isLoading) {
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.filterBar}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Filter', { currentFilters: appliedFilters })}>
-                    <Icon name="filter-outline" size={20} color="#333" />
-                    <Text style={styles.actionButtonText}>Filter</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton} onPress={() => setIsSortModalVisible(true)}>
-                    <Icon name="swap-vertical-outline" size={20} color="#333" />
-                    <Text style={styles.actionButtonText}>Sort</Text>
-                </TouchableOpacity>
-            </View>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#0CA201" />
+      </View>
+    );
+  }
 
-            {/* ==========================================================
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.filterBar}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() =>
+            navigation.navigate('Filter', { currentFilters: appliedFilters })
+          }
+        >
+          <Icon name="filter-outline" size={20} color="#333" />
+          <Text style={styles.actionButtonText}>Filter</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setIsSortModalVisible(true)}
+        >
+          <Icon name="swap-vertical-outline" size={20} color="#333" />
+          <Text style={styles.actionButtonText}>Sort</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ==========================================================
                 === THE FIX IS HERE: Added numColumns and key props    ===
                 ========================================================== */}
-            <FlatList
-                data={products}
-                renderItem={({ item }) => <ProductCard product={item} />}
-                keyExtractor={(item) => item.offer_id.toString()}
-                numColumns={2} // This creates the two-column grid layout
-                key={2} // Add a key to force re-render if layout changes (good practice)
-                contentContainerStyle={styles.productList}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={renderFooter}
-                ListEmptyComponent={
-                    <View style={styles.centered}><Text>No products found for "{query}".</Text></View>
-                }
-            />
+      <FlatList
+        data={products}
+        // renderItem={({ item }) => <ProductCard product={item} />}
 
-            <SortModal
-                visible={isSortModalVisible}
-                onClose={() => setIsSortModalVisible(false)}
-                onApply={handleApplySort}
-                currentSortOption={appliedSortOption}
-            />
-        </SafeAreaView>
-    );
+        renderItem={({ item }) => (
+          <ProductCard
+            product={item}
+            onPress={() =>
+              navigation.navigate('ProductDetails', { product: item })
+            }
+          />
+        )}
+        keyExtractor={item => item.offer_id.toString()}
+        numColumns={2} // This creates the two-column grid layout
+        key={2} // Add a key to force re-render if layout changes (good practice)
+        contentContainerStyle={styles.productList}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={
+          <View style={styles.centered}>
+            <Text>No products found for "{query}".</Text>
+          </View>
+        }
+      />
+
+      <SortModal
+        visible={isSortModalVisible}
+        onClose={() => setIsSortModalVisible(false)}
+        onApply={handleApplySort}
+        currentSortOption={appliedSortOption}
+      />
+    </SafeAreaView>
+  );
 };
 
 // --- STYLES (Unchanged) ---
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F9FAFB' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-    filterBar: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
-        backgroundColor: '#FFFFFF',
-        gap: 12,
-    },
-    actionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    actionButtonText: {
-        marginLeft: 8,
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#1F2937'
-    },
-    productList: {
-        paddingHorizontal: 8,
-    },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    gap: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  actionButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  productList: {
+    paddingHorizontal: 8,
+  },
 });
 
 export default SearchResultsScreen;

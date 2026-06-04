@@ -1,7 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Image, TouchableOpacity,Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Image, TouchableOpacity, Alert } from 'react-native';
 import { useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { orderService } from '../services/orderService';
+import { useAuth } from '../context/AuthContext';
+import { Linking } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import moment from 'moment';
 
@@ -11,10 +13,10 @@ const StatusTracker = ({ status }) => {
     const currentIndex = statuses.indexOf(status);
 
     if (status === 'CANCELLED') {
-        return <Text style={[styles.statusLabel, {color: '#D32F2F', fontSize: 16}]}>Order Cancelled</Text>
+        return <Text style={[styles.statusLabel, { color: '#D32F2F', fontSize: 16 }]}>Order Cancelled</Text>
     }
     if (currentIndex === -1) { // For PENDING_PAYMENT etc.
-        return <Text style={[styles.statusLabel, {color: '#f57c00', fontSize: 16}]}>Processing...</Text>
+        return <Text style={[styles.statusLabel, { color: '#f57c00', fontSize: 16 }]}>Processing...</Text>
     }
 
     return (
@@ -37,10 +39,11 @@ const OrderDetailsScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const { orderId } = route.params;
+    const { token } = useAuth();
 
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-     const [isFetchingProduct, setIsFetchingProduct] = useState(false); // <-- ADD THIS STATE
+    const [isFetchingProduct, setIsFetchingProduct] = useState(false); // <-- ADD THIS STATE
 
     const fetchOrderDetails = useCallback(async () => {
         setIsLoading(true);
@@ -66,6 +69,15 @@ const OrderDetailsScreen = () => {
         }, [fetchOrderDetails])
     );
 
+
+    const handleDownloadInvoice = () => {
+        if (!order || !token) return;
+        const url = orderService.getInvoiceUrl(order.id, token);
+        Linking.openURL(url).catch(err => {
+            console.error("Failed to open invoice URL", err);
+            Alert.alert("Error", "Could not open the invoice. Please try again later.");
+        });
+    };
 
     const handleItemPress = async (productId) => {
         if (isFetchingProduct) return;
@@ -93,7 +105,7 @@ const OrderDetailsScreen = () => {
     if (isLoading) {
         return <View style={styles.centered}><ActivityIndicator size="large" color="#0CA201" /></View>;
     }
-    
+
     if (!order) {
         return <View style={styles.centered}><Text>Order not found.</Text></View>;
     }
@@ -113,7 +125,7 @@ const OrderDetailsScreen = () => {
                     <Text style={styles.sectionTitle}>Items Ordered ({order.items.length})</Text>
                     {order.items.map(item => (
                         <View key={item.id} style={styles.itemRow}>
-                             <Image source={{ uri: `http://192.168.0.171:3000${item.imageUrl}` }} style={styles.itemImage} />
+                             <Image source={{ uri: `http://https://newapi.earn24.in${item.imageUrl}` }} style={styles.itemImage} />
                              <View style={styles.itemDetails}>
                                 <Text style={styles.itemName}>{item.productName}</Text>
                                 <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
@@ -126,31 +138,28 @@ const OrderDetailsScreen = () => {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Items Ordered ({order.items.length})</Text>
                     {order.items.map(item => (
-                        <TouchableOpacity 
-                            key={item.id} 
+                        <TouchableOpacity
+                            key={item.id}
                             style={styles.itemRow}
                             onPress={() => handleItemPress(item.productId)}
                             activeOpacity={0.7}
                             disabled={isFetchingProduct}
                         >
-                             <Image source={{ uri: `http://192.168.0.171:3000${item.imageUrl}` }} style={styles.itemImage} />
-                             <View style={styles.itemDetails}>
+                            <Image source={{ uri: `https://newapi.earn24.in${item.imageUrl}` }} style={styles.itemImage} />
+                            <View style={styles.itemDetails}>
                                 <Text style={styles.itemName}>{item.productName}</Text>
                                 <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
-                             </View>
-                             <Text style={styles.itemPrice}>₹{item.totalPrice.toFixed(2)}</Text>
+                            </View>
+                            <Text style={styles.itemPrice}>₹{item.totalPrice.toFixed(2)}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
 
-
-
-                
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Shipping Address</Text>
-                     <View style={styles.addressCard}>
+                    <View style={styles.addressCard}>
                         <Text style={styles.addressName}>{order.shippingAddress.fullName}</Text>
-                        <Text style={styles.addressText}>{`${order.shippingAddress.addressLine1}${order.shippingAddress.addressLine2 ? ', '+order.shippingAddress.addressLine2 : ''}`}</Text>
+                        <Text style={styles.addressText}>{`${order.shippingAddress.addressLine1}${order.shippingAddress.addressLine2 ? ', ' + order.shippingAddress.addressLine2 : ''}`}</Text>
                         <Text style={styles.addressText}>{`${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pincode}`}</Text>
                     </View>
                 </View>
@@ -161,6 +170,20 @@ const OrderDetailsScreen = () => {
                     <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Delivery Fee</Text><Text style={styles.summaryValue}>₹{order.deliveryFee.toFixed(2)}</Text></View>
                     <View style={styles.totalRow}><Text style={styles.totalLabel}>Grand Total</Text><Text style={styles.totalValue}>₹{order.totalAmount.toFixed(2)}</Text></View>
                 </View>
+
+                {/* --- DOWNLOAD INVOICE BUTTON (Back at Bottom with Margin) --- */}
+                {order.orderStatus === 'DELIVERED' && (
+                    <TouchableOpacity 
+                        style={styles.invoiceButton} 
+                        onPress={handleDownloadInvoice}
+                    >
+                        <Icon name="download-outline" size={20} color="#fff" />
+                        <Text style={styles.invoiceButtonText}>Download Invoice (PDF)</Text>
+                    </TouchableOpacity>
+                )}
+
+                {/* Extra space at the bottom for better scroll experience */}
+                <View style={{ height: 60 }} /> 
             </ScrollView>
         </SafeAreaView>
     );
@@ -197,6 +220,26 @@ const styles = StyleSheet.create({
     totalRow: { paddingTop: 10, borderTopWidth: 1, borderTopColor: '#e9ecef', marginTop: 5 },
     totalLabel: { fontSize: 18, fontWeight: 'bold' },
     totalValue: { fontSize: 18, fontWeight: 'bold', color: '#2a9d8f' },
+    invoiceButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#0CA201',
+        margin: 15,
+        padding: 15,
+        borderRadius: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    invoiceButtonText: {
+        marginLeft: 10,
+        fontSize: 16,
+        color: '#fff',
+        fontWeight: '600',
+    },
 });
 
 export default OrderDetailsScreen;

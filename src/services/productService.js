@@ -60,7 +60,6 @@ const getProductById = async (productId) => {
 
 const getProductsByCategory = async (categoryId, pincode, page = 1) => {
   try {
-    // This will make a GET request to e.g., /api/products/by-category/2?pincode=828207&page=1
     const response = await api.get(`/products/by-category/${categoryId}`, {
       params: { pincode, page }
     });
@@ -71,6 +70,19 @@ const getProductsByCategory = async (categoryId, pincode, page = 1) => {
   }
 };
 
+const getProductsBySubcategory = async (subcategoryId, pincode, page = 1) => {
+  try {
+    // This will make a GET request to e.g., /api/products/by-subcategory/2?pincode=828207&page=1
+    const response = await api.get(`/products/by-subcategory/${subcategoryId}`, {
+      params: { pincode, page }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error in getProductsBySubcategory:', error.response?.data || error.message);
+    throw error.response?.data || new Error('Failed to fetch subcategory products');
+  }
+};
+
 
 
 export const productService = {
@@ -78,5 +90,6 @@ export const productService = {
     getTrendingSearches,
     getSearchSuggestions,
     getProductById,
-    getProductsByCategory
+    getProductsByCategory,
+    getProductsBySubcategory
 };

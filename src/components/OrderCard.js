@@ -14,7 +14,7 @@ const getStatusStyle = (status) => {
 const OrderCard = ({ order, onPress }) => {
     const statusStyle = getStatusStyle(order.order_status);
     const imageUrl = order.display_image_url 
-        ? `http://192.168.0.171:3000${order.display_image_url}`
+        ? `https://newapi.earn24.in${order.display_image_url}`
         : 'https://via.placeholder.com/150';
 
     return (

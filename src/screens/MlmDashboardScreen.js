@@ -14,14 +14,14 @@ const MlmDashboardScreen = ({ navigation }) => {
     try {
       setIsLoading(true);
       setError('');
-      const response = await mlmService.getSummary(); 
+      const response = await mlmService.getSummary();
       if (response && response.status) {
         // --- DATA PARSING FIX ---
         // Ensure all numeric values from the API are converted to actual numbers
         const parsedData = {
-            walletBalance: parseFloat(response.data.walletBalance || 0),
-            totalBv: parseFloat(response.data.totalBv || 0),
-            directReferrals: parseInt(response.data.directReferrals || 0, 10),
+          walletBalance: parseFloat(response.data.walletBalance || 0),
+          totalBv: parseFloat(response.data.totalBv || 0),
+          directReferrals: parseInt(response.data.directReferrals || 0, 10),
         };
         setSummary(parsedData);
       } else {
@@ -52,20 +52,20 @@ const MlmDashboardScreen = ({ navigation }) => {
 
   if (error) {
     return (
-        <View style={styles.centered}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
-                <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
-        </View>
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#0CA201"]}/>}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#0CA201"]} />}
     >
       <View style={styles.summaryGrid}>
         <View style={[styles.summaryCard, { flex: 1.2 }]}>

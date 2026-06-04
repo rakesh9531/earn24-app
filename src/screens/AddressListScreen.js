@@ -104,7 +104,7 @@
 //             setIsSelecting(false);
 //         }
 //     };
-    
+
 //     if (isLoading) {
 //         return <View style={styles.centered}><ActivityIndicator size="large" color="#0CA201" /></View>;
 //     }
@@ -170,6 +170,7 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 import { addressService } from '../services/addressService';
 import { cartService } from '../services/cartService';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AddressCard = ({ address, onSelect, isSelecting, mode }) => {
     const navigation = useNavigation();
@@ -179,7 +180,7 @@ const AddressCard = ({ address, onSelect, isSelecting, mode }) => {
     };
 
     const handleDelete = () => {
-        Alert.alert( "Delete Address", "Are you sure you want to delete this address?",
+        Alert.alert("Delete Address", "Are you sure you want to delete this address?",
             [
                 { text: "Cancel", style: "cancel" },
                 { text: "Delete", style: "destructive", onPress: () => { /* Add your API call to delete here */ } }
@@ -199,21 +200,21 @@ const AddressCard = ({ address, onSelect, isSelecting, mode }) => {
             <Text style={styles.addressText}>Mobile: {address.mobileNumber}</Text>
 
             <View style={styles.addressActions}>
-                 <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+                <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
                     <Icon name="create-outline" size={20} color="#007bff" />
                     <Text style={styles.actionText}>Edit</Text>
-                 </TouchableOpacity>
-                 <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
                     <Icon name="trash-outline" size={20} color="#D32F2F" />
-                    <Text style={[styles.actionText, {color: '#D32F2F'}]}>Delete</Text>
-                 </TouchableOpacity>
+                    <Text style={[styles.actionText, { color: '#D32F2F' }]}>Delete</Text>
+                </TouchableOpacity>
             </View>
 
             {/* --- THIS IS THE KEY UI CHANGE --- */}
             {/* Only show the "Deliver" button if we are in 'checkout' mode */}
             {mode === 'checkout' && (
-                <TouchableOpacity 
-                    style={[styles.deliverButton, isSelecting && styles.disabledButton]} 
+                <TouchableOpacity
+                    style={[styles.deliverButton, isSelecting && styles.disabledButton]}
                     onPress={() => onSelect(address)}
                     disabled={isSelecting}
                 >
@@ -227,7 +228,8 @@ const AddressCard = ({ address, onSelect, isSelecting, mode }) => {
 const AddressListScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    
+    const insets = useSafeAreaInsets();
+
     // --- THIS IS THE FIX ---
     // Check if params exist. If they do, we are in 'checkout' mode.
     // The optional chaining operator `?.` prevents a crash if `route.params` is undefined.
@@ -254,7 +256,7 @@ const AddressListScreen = () => {
                 }
             };
             loadAddresses();
-            return () => {};
+            return () => { };
         }, [])
     );
 
@@ -291,7 +293,7 @@ const AddressListScreen = () => {
             setIsSelecting(false);
         }
     };
-    
+
     if (isLoading) {
         return <View style={styles.centered}><ActivityIndicator size="large" color="#0CA201" /></View>;
     }
@@ -303,9 +305,9 @@ const AddressListScreen = () => {
                 renderItem={({ item }) => <AddressCard address={item} onSelect={handleSelectAddress} isSelecting={isSelecting} mode={mode} />}
                 keyExtractor={item => item.id.toString()}
                 ListEmptyComponent={<View style={styles.centered}><Text>No addresses found. Please add one.</Text></View>}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
             />
-            <View style={styles.footer}>
+            <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
                 <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddEditAddress')}>
                     <Icon name="add" size={24} color="#fff" />
                     <Text style={styles.addButtonText}>Add New Address</Text>
@@ -323,7 +325,7 @@ const styles = StyleSheet.create({
     addressHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
     addressType: { fontSize: 16, fontWeight: 'bold', color: '#181725', marginLeft: 8 },
     defaultTag: { backgroundColor: '#fef3c7', borderRadius: 6, marginLeft: 'auto' },
-    defaultTagText: { color: '#92400e', fontWeight: 'bold', fontSize: 10, paddingHorizontal: 8, paddingVertical: 4,},
+    defaultTagText: { color: '#92400e', fontWeight: 'bold', fontSize: 10, paddingHorizontal: 8, paddingVertical: 4, },
     addressName: { fontSize: 15, fontWeight: '500', color: '#343a40', marginBottom: 4 },
     addressText: { fontSize: 14, color: '#6c757d', lineHeight: 20, marginTop: 4 },
     addressActions: { flexDirection: 'row', paddingTop: 12, marginTop: 12, borderTopWidth: 1, borderTopColor: '#f0f0f0' },

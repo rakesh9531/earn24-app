@@ -6,7 +6,7 @@
 // // A single item in the cart list (No changes needed here)
 // const CartItem = ({ item }) => {
 //     const { updateQuantity, removeFromCart } = useCart();
-//     const imageUrl = item.main_image_url ? `http://192.168.0.171:3000${item.main_image_url}` : 'https://via.placeholder.com/150';
+//     const imageUrl = item.main_image_url ? `http://https://newapi.earn24.in${item.main_image_url}` : 'https://via.placeholder.com/150';
 //     const bvPerUnit = parseFloat(item.bv_earned || 0);
 //     const totalBvForItem = bvPerUnit * item.quantity;
 
@@ -18,7 +18,7 @@
 //             updateQuantity(item.cart_item_id, item.quantity - 1);
 //         }
 //     };
-    
+
 //     const handleIncrease = () => {
 //         updateQuantity(item.cart_item_id, item.quantity + 1);
 //     };
@@ -77,7 +77,7 @@
 //             </View>
 //         );
 //     };
-    
+
 //     return (
 //         <SafeAreaView style={styles.container}>
 //             <FlatList
@@ -117,7 +117,7 @@
 //                         <Text style={styles.totalLabel}>Total Amount</Text>
 //                         <Text style={styles.totalValue}>₹{totalAmount.toFixed(2)}</Text>
 //                     </View>
-                    
+
 //                     <TouchableOpacity 
 //                         style={styles.checkoutButton} 
 //                         onPress={() => navigation.navigate('AddressList')}
@@ -142,7 +142,7 @@
 //     headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingTop: 20, paddingBottom: 10, backgroundColor: '#f8f9fa' },
 //     headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#181725' },
 //     clearButtonText: { color: '#D32F2F', fontSize: 14, fontWeight: '600' },
-    
+
 //     itemContainer: { flexDirection: 'row', backgroundColor: '#fff', marginBottom: 1, padding: 15, alignItems: 'center' },
 //     itemImage: { width: 70, height: 70, borderRadius: 8, marginRight: 15, resizeMode: 'contain' },
 //     itemDetails: { flex: 1 },
@@ -154,7 +154,7 @@
 //     quantityContainer: { flexDirection: 'row', alignItems: 'center', },
 //     quantityButton: { padding: 5 },
 //     quantityText: { fontSize: 18, fontWeight: '600', marginHorizontal: 10, minWidth: 25, textAlign: 'center' },
-    
+
 //     summaryContainer: { padding: 20, borderTopWidth: 1, borderTopColor: '#e9ecef', backgroundColor: '#fff', elevation: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
 //     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
 //     summaryLabel: { fontSize: 16, color: '#6c757d' },
@@ -163,7 +163,7 @@
 //     totalRow: { paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e9ecef', marginTop: 5 },
 //     totalLabel: { fontSize: 18, fontWeight: 'bold', color: '#181725' },
 //     totalValue: { fontSize: 18, fontWeight: 'bold', color: '#2a9d8f' },
-    
+
 //     checkoutButton: { backgroundColor: '#0CA201', padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 15 },
 //     checkoutButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 // });
@@ -186,11 +186,11 @@
 // // A single item in the cart list (NOW with availability logic)
 // const CartItem = ({ item }) => {
 //     const { updateQuantity, removeFromCart } = useCart();
-    
+
 //     // Determine if the item is available based on the new flag from the backend
 //     const isAvailable = item.is_available;
-    
-//     const imageUrl = item.main_image_url ? `http://192.168.0.171:3000${item.main_image_url}` : 'https://via.placeholder.com/150';
+
+//     const imageUrl = item.main_image_url ? `http://https://newapi.earn24.in${item.main_image_url}` : 'https://via.placeholder.com/150';
 //     const bvPerUnit = parseFloat(item.bv_earned || 0);
 //     const totalBvForItem = bvPerUnit * item.quantity;
 
@@ -203,7 +203,7 @@
 //             updateQuantity(item.cart_item_id, item.quantity - 1);
 //         }
 //     };
-    
+
 //     const handleIncrease = () => {
 //         if (!isAvailable) return; // Do nothing if not available
 //         updateQuantity(item.cart_item_id, item.quantity + 1);
@@ -263,7 +263,7 @@
 //             </View>
 //         );
 //     };
-    
+
 //     return (
 //         <SafeAreaView style={styles.container}>
 //             <FlatList
@@ -302,7 +302,7 @@
 //                         <Text style={styles.totalLabel}>Total Amount</Text>
 //                         <Text style={styles.totalValue}>₹{totalAmount.toFixed(2)}</Text>
 //                     </View>
-                    
+
 //                     <TouchableOpacity 
 //                         style={[styles.checkoutButton, isCheckoutDisabled && styles.checkoutButtonDisabled]}
 //                         disabled={isCheckoutDisabled}
@@ -328,7 +328,7 @@
 //     headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingTop: 20, paddingBottom: 10, backgroundColor: '#f8f9fa' },
 //     headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#181725' },
 //     clearButtonText: { color: '#D32F2F', fontSize: 14, fontWeight: '600' },
-    
+
 //     itemContainer: { flexDirection: 'row', backgroundColor: '#fff', marginBottom: 1, padding: 15, alignItems: 'center' },
 //     unavailableItemContainer: { backgroundColor: '#fff5f5' }, // Light red background for unavailable items
 //     itemImage: { width: 70, height: 70, borderRadius: 8, marginRight: 15, resizeMode: 'contain' },
@@ -359,7 +359,7 @@
 //         fontSize: 13,
 //         textAlign: 'center'
 //     },
-    
+
 //     summaryContainer: { padding: 20, borderTopWidth: 1, borderTopColor: '#e9ecef', backgroundColor: '#fff', elevation: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
 //     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
 //     summaryLabel: { fontSize: 16, color: '#6c757d' },
@@ -368,7 +368,7 @@
 //     totalRow: { paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e9ecef', marginTop: 5 },
 //     totalLabel: { fontSize: 18, fontWeight: 'bold', color: '#181725' },
 //     totalValue: { fontSize: 18, fontWeight: 'bold', color: '#2a9d8f' },
-    
+
 //     checkoutButton: { backgroundColor: '#0CA201', padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 15 },
 //     checkoutButtonDisabled: { backgroundColor: '#a5d6a7' },
 //     checkoutButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
@@ -427,11 +427,11 @@
 //         toggleItemSelected,
 //         selectedItemIds
 //     } = useCart();
-    
+
 //     const isAvailable = item.is_available;
 //     const isSelected = !!selectedItemIds[item.cart_item_id];
 
-//     const imageUrl = item.main_image_url ? `http://192.168.0.171:3000${item.main_image_url}` : 'https://via.placeholder.com/150';
+//     const imageUrl = item.main_image_url ? `http://https://newapi.earn24.in${item.main_image_url}` : 'https://via.placeholder.com/150';
 
 //     const handleDecrease = () => {
 //         if (!isAvailable) return;
@@ -441,7 +441,7 @@
 //             updateQuantity(item.cart_item_id, item.quantity - 1);
 //         }
 //     };
-    
+
 //     const handleIncrease = () => {
 //         if (!isAvailable) return;
 //         updateQuantity(item.cart_item_id, item.quantity + 1);
@@ -462,7 +462,7 @@
 //             </TouchableOpacity>
 
 //             <Image source={{ uri: imageUrl }} style={styles.itemImage} />
-            
+
 //             <View style={styles.itemDetails}>
 //                 <View style={styles.itemInfo}>
 //                     <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
@@ -522,7 +522,7 @@
 //             </View>
 //         );
 //     };
-    
+
 //     return (
 //         <SafeAreaView style={styles.container}>
 //             <FlatList
@@ -585,7 +585,7 @@
 //     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
 //     emptyText: { ...FONTS.h2, color: COLORS.textLight, marginTop: 20 },
 //     emptySubText: { ...FONTS.body, marginTop: 8, textAlign: 'center' },
-    
+
 //     headerContainer: { 
 //         flexDirection: 'row', 
 //         justifyContent: 'space-between', 
@@ -596,7 +596,7 @@
 //         backgroundColor: COLORS.background 
 //     },
 //     clearButtonText: { color: COLORS.danger, fontSize: 14, fontWeight: '600' },
-    
+
 //     itemCard: {
 //         flexDirection: 'row',
 //         backgroundColor: COLORS.surface,
@@ -632,7 +632,7 @@
 //     itemName: { ...FONTS.h2, marginBottom: 2 },
 //     itemBrand: { ...FONTS.body, fontSize: 12 },
 //     bvText: { fontSize: 13, fontWeight: '500', color: '#007bff', marginTop: 4 },
-    
+
 //     itemActions: {
 //         flexDirection: 'row',
 //         alignItems: 'center',
@@ -656,7 +656,7 @@
 //         top: 4,
 //         right: 4,
 //     },
-    
+
 //     unavailableContainer: {
 //         flexDirection: 'row',
 //         alignItems: 'center',
@@ -672,7 +672,7 @@
 //         fontSize: 12,
 //         marginLeft: 8,
 //     },
-    
+
 //     summaryContainer: { 
 //         padding: SIZES.padding, 
 //         backgroundColor: COLORS.surface, 
@@ -701,7 +701,7 @@
 //     },
 //     totalLabel: { ...FONTS.h1, fontSize: 18 },
 //     totalValue: { ...FONTS.h1, fontSize: 22, color: COLORS.primary },
-    
+
 //     checkoutButton: { 
 //         backgroundColor: COLORS.primary, 
 //         padding: 18, 
@@ -726,50 +726,51 @@
 
 
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useCart } from '../context/CartContext';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // --- DESIGN SYSTEM (for a consistent look and feel) ---
 const COLORS = {
-  primary: '#0CA201',
-  text: '#181725',
-  textLight: '#6c757d',
-  danger: '#D32F2F',
-  background: '#F8F9FA',
-  surface: '#FFFFFF',
-  border: '#E9ECEF',
-  disabled: '#CCCCCC',
-  unavailableBg: '#FFF5F5',
+    primary: '#0CA201',
+    text: '#181725',
+    textLight: '#6c757d',
+    danger: '#D32F2F',
+    background: '#F8F9FA',
+    surface: '#FFFFFF',
+    border: '#E9ECEF',
+    disabled: '#CCCCCC',
+    unavailableBg: '#FFF5F5',
 };
 
 const SIZES = {
-  padding: 16,
-  radius: 12,
+    padding: 16,
+    radius: 12,
 };
 
 const FONTS = {
-  h1: { fontSize: 24, fontWeight: 'bold', color: COLORS.text },
-  h2: { fontSize: 16, fontWeight: '600', color: COLORS.text },
-  body: { fontSize: 14, color: COLORS.textLight },
-  price: { fontSize: 18, fontWeight: 'bold', color: COLORS.primary },
+    h1: { fontSize: 24, fontWeight: 'bold', color: COLORS.text },
+    h2: { fontSize: 16, fontWeight: '600', color: COLORS.text },
+    body: { fontSize: 14, color: COLORS.textLight },
+    price: { fontSize: 18, fontWeight: 'bold', color: COLORS.primary },
 };
 
 // ==========================================================
 // === CartItem Component (Redesigned for Clarity)        ===
 // ==========================================================
 const CartItem = ({ item }) => {
-    const { 
-        updateQuantity, 
-        removeFromCart, 
+    const {
+        updateQuantity,
+        removeFromCart,
         toggleItemSelected,
         selectedItemIds
     } = useCart();
-    
+
     const isAvailable = item.is_available;
     const isSelected = !!selectedItemIds[item.cart_item_id];
 
-    const imageUrl = item.main_image_url ? `http://192.168.0.171:3000${item.main_image_url}` : 'https://via.placeholder.com/150';
+    const imageUrl = item.main_image_url ? `https://newapi.earn24.in${item.main_image_url}` : 'https://via.placeholder.com/150';
 
     const handleDecrease = () => {
         if (!isAvailable) return;
@@ -779,7 +780,7 @@ const CartItem = ({ item }) => {
             updateQuantity(item.cart_item_id, item.quantity - 1);
         }
     };
-    
+
     const handleIncrease = () => {
         if (!isAvailable) return;
         updateQuantity(item.cart_item_id, item.quantity + 1);
@@ -787,12 +788,12 @@ const CartItem = ({ item }) => {
 
     return (
         <View style={[styles.itemCard, !isAvailable && { opacity: 0.6 }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
                 onPress={() => toggleItemSelected(item.cart_item_id)}
                 disabled={!isAvailable}
                 style={styles.checkboxContainer}
             >
-                <Icon 
+                <Icon
                     name={isSelected ? 'checkbox' : 'square-outline'}
                     size={26}
                     color={isAvailable ? (isSelected ? COLORS.primary : COLORS.textLight) : COLORS.disabled}
@@ -800,12 +801,12 @@ const CartItem = ({ item }) => {
             </TouchableOpacity>
 
             <Image source={{ uri: imageUrl }} style={styles.itemImage} />
-            
+
             <View style={styles.itemDetails}>
                 <View style={styles.itemInfo}>
                     <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
                     <Text style={styles.itemBrand}>{item.brand_name}</Text>
-                    {isAvailable && 
+                    {isAvailable &&
                         <Text style={styles.bvText}>
                             Earn {(parseFloat(item.bv_earned || 0) * item.quantity).toFixed(2)} BV
                         </Text>
@@ -843,17 +844,18 @@ const CartItem = ({ item }) => {
 // === Main CartScreen Component (Uses Context Data)       ===
 // ==========================================================
 const CartScreen = ({ navigation }) => {
-    const { 
-        cartItems, 
-        subtotal, 
-        totalBvInCart, 
-        isLoading, 
-        clearCart, 
+    const insets = useSafeAreaInsets();
+    const {
+        cartItems,
+        subtotal,
+        totalBvInCart,
+        isLoading,
+        clearCart,
         selectedItemsForCheckout,
         deliveryFee,
         totalAmount
     } = useCart();
-    
+
     const isCheckoutDisabled = selectedItemsForCheckout.length === 0;
 
     const renderEmptyComponent = () => {
@@ -868,7 +870,7 @@ const CartScreen = ({ navigation }) => {
             </View>
         );
     };
-    
+
     return (
         <SafeAreaView style={styles.container}>
             <FlatList
@@ -877,12 +879,12 @@ const CartScreen = ({ navigation }) => {
                 keyExtractor={item => item.cart_item_id.toString()}
                 ListHeaderComponent={() => (
                     <View style={styles.headerContainer}>
-                         <Text style={FONTS.h1}>My Basket</Text>
-                         {cartItems.length > 0 && (
-                             <TouchableOpacity onPress={clearCart}>
-                                 <Text style={styles.clearButtonText}>Clear All</Text>
-                             </TouchableOpacity>
-                         )}
+                        <Text style={FONTS.h1}>My Basket</Text>
+                        {cartItems.length > 0 && (
+                            <TouchableOpacity onPress={clearCart}>
+                                <Text style={styles.clearButtonText}>Clear All</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
                 ListEmptyComponent={renderEmptyComponent}
@@ -890,7 +892,7 @@ const CartScreen = ({ navigation }) => {
                 style={styles.listStyle}
             />
             {cartItems.length > 0 && (
-                <View style={styles.summaryContainer}>
+                <View style={[styles.summaryContainer, { paddingBottom: SIZES.padding + (Platform.OS === 'android' ? insets.bottom : 0) }]}>
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Subtotal (Selected Items)</Text>
                         <Text style={styles.summaryValue}>₹{subtotal.toFixed(2)}</Text>
@@ -907,7 +909,7 @@ const CartScreen = ({ navigation }) => {
                         <Text style={styles.totalLabel}>Total Amount</Text>
                         <Text style={styles.totalValue}>₹{totalAmount.toFixed(2)}</Text>
                     </View>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.checkoutButton, isCheckoutDisabled && styles.checkoutButtonDisabled]}
                         disabled={isCheckoutDisabled}
                         onPress={() => navigation.navigate('AddressList', { itemsForCheckout: selectedItemsForCheckout })}
@@ -931,18 +933,18 @@ const styles = StyleSheet.create({
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
     emptyText: { ...FONTS.h2, color: COLORS.textLight, marginTop: 20 },
     emptySubText: { ...FONTS.body, marginTop: 8, textAlign: 'center' },
-    
-    headerContainer: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        paddingHorizontal: SIZES.padding, 
-        paddingTop: 20, 
-        paddingBottom: 10, 
-        backgroundColor: COLORS.background 
+
+    headerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: SIZES.padding,
+        paddingTop: 20,
+        paddingBottom: 10,
+        backgroundColor: COLORS.background
     },
     clearButtonText: { color: COLORS.danger, fontSize: 14, fontWeight: '600' },
-    
+
     itemCard: {
         flexDirection: 'row',
         backgroundColor: COLORS.surface,
@@ -960,15 +962,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingRight: 10,
     },
-    itemImage: { 
-        width: 70, 
-        height: 70, 
-        borderRadius: SIZES.radius - 4, 
+    itemImage: {
+        width: 70,
+        height: 70,
+        borderRadius: SIZES.radius - 4,
         resizeMode: 'contain',
         backgroundColor: COLORS.background,
     },
-    itemDetails: { 
-        flex: 1, 
+    itemDetails: {
+        flex: 1,
         marginLeft: 12,
         justifyContent: 'space-between',
     },
@@ -978,7 +980,7 @@ const styles = StyleSheet.create({
     itemName: { ...FONTS.h2, marginBottom: 2 },
     itemBrand: { ...FONTS.body, fontSize: 12 },
     bvText: { fontSize: 13, fontWeight: '500', color: '#007bff', marginTop: 4 },
-    
+
     itemActions: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -986,23 +988,23 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     itemPrice: { ...FONTS.price },
-    quantityStepper: { 
-        flexDirection: 'row', 
+    quantityStepper: {
+        flexDirection: 'row',
         alignItems: 'center',
     },
     quantityButton: { paddingHorizontal: 6 },
-    quantityText: { 
-        ...FONTS.h2, 
-        fontSize: 18, 
+    quantityText: {
+        ...FONTS.h2,
+        fontSize: 18,
         marginHorizontal: 8,
     },
-    deleteButton: { 
+    deleteButton: {
         padding: 8,
         position: 'absolute',
         top: 4,
         right: 4,
     },
-    
+
     unavailableContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1018,15 +1020,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginLeft: 8,
     },
-    
-    summaryContainer: { 
-        padding: SIZES.padding, 
-        backgroundColor: COLORS.surface, 
+
+    summaryContainer: {
+        padding: SIZES.padding,
+        backgroundColor: COLORS.surface,
         borderTopLeftRadius: SIZES.radius + 10,
         borderTopRightRadius: SIZES.radius + 10,
-        elevation: 10, 
-        shadowColor: '#000', 
-        shadowOpacity: 0.1, 
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: -5 },
         borderTopWidth: 1,
@@ -1036,10 +1038,10 @@ const styles = StyleSheet.create({
     summaryLabel: { ...FONTS.body, fontSize: 16 },
     summaryValue: { ...FONTS.h2, fontSize: 16 },
     bvValue: { fontSize: 16, fontWeight: 'bold', color: '#007bff' },
-    totalRow: { 
-        paddingTop: 12, 
-        borderTopWidth: 1, 
-        borderTopColor: COLORS.border, 
+    totalRow: {
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
         marginTop: 5,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -1047,13 +1049,13 @@ const styles = StyleSheet.create({
     },
     totalLabel: { ...FONTS.h1, fontSize: 18 },
     totalValue: { ...FONTS.h1, fontSize: 22, color: COLORS.primary },
-    
-    checkoutButton: { 
-        backgroundColor: COLORS.primary, 
-        padding: 18, 
-        borderRadius: SIZES.radius, 
-        alignItems: 'center', 
-        marginTop: 15 
+
+    checkoutButton: {
+        backgroundColor: COLORS.primary,
+        padding: 18,
+        borderRadius: SIZES.radius,
+        alignItems: 'center',
+        marginTop: 15
     },
     checkoutButtonDisabled: { backgroundColor: '#a5d6a7' },
     checkoutButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },

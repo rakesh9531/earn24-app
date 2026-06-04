@@ -2,7 +2,7 @@
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // // Your backend server's base URL
-// const API_BASE_URL = 'http://192.168.0.171:3000/api'; // Use your actual IP
+// const API_BASE_URL = 'http://https://newapi.earn24.in/api'; // Use your actual IP
 
 // const api = axios.create({
 //   baseURL: API_BASE_URL,
@@ -26,7 +26,7 @@
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // // Your backend server's base URL
-// const API_BASE_URL = 'http://192.168.0.171:3000/api'; // Use your actual IP
+// const API_BASE_URL = 'http://https://newapi.earn24.in/api'; // Use your actual IP
 
 // const api = axios.create({
 //   baseURL: API_BASE_URL,
@@ -66,7 +66,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const TOKEN_KEY = 'user_token';
 
 // Your backend server's base URL
-const API_BASE_URL = 'http://192.168.0.171:3000/api';
+const API_BASE_URL = 'https://newapi.earn24.in/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

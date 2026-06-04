@@ -26,9 +26,9 @@ const clearCart = async () => {
 };
 
 
-const validateForCheckout = async (pincode, items) => {
+const validateForCheckout = async (pincode, items, cartItemIds) => {
     try {
-        const payload = { pincode, items };
+        const payload = { pincode, items, cartItemIds };
         const response = await api.post('/cart/validate-for-checkout', payload);
         return response.data;
     } catch (error) {

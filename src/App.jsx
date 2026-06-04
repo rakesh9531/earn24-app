@@ -47,8 +47,10 @@ import AppNavigator from './navigation/AppNavigator';
 import { StatusBar } from 'react-native';
 
 import { AuthProvider } from './context/AuthContext';
+import { FavoriteProvider } from './context/FavoriteContext';
 import { CartProvider } from './context/CartContext';
 import { PincodeProvider } from './context/PincodeContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const App = () => {
   useEffect(() => {
@@ -64,24 +66,27 @@ const App = () => {
     // === THIS IS THE CORRECT AND FINAL ORDER FOR YOUR APP   ===
     // ==========================================================
     
-    // 1. NavigationContainer must be at the top level.
-    <NavigationContainer>
-    
-      {/* 2. Providers that don't depend on others can go first. */}
-      <AuthProvider>
-        <PincodeProvider>
+    <SafeAreaProvider>
+      <NavigationContainer>
+      
+        {/* 2. Providers that don't depend on others can go first. */}
+        <AuthProvider>
+          <FavoriteProvider>
+            <PincodeProvider>
 
-          {/* 3. The CartProvider, which depends on the others, goes inside. */}
-          <CartProvider>
-          
-            {/* 4. The rest of your app, including the navigator, goes at the very center. */}
-            <StatusBar barStyle="dark-content" />
-            <AppNavigator />
-            
-          </CartProvider>
-        </PincodeProvider>
-      </AuthProvider>
-    </NavigationContainer>
+              {/* 3. The CartProvider, which depends on the others, goes inside. */}
+              <CartProvider>
+              
+                {/* 4. The rest of your app, including the navigator, goes at the very center. */}
+                <StatusBar barStyle="dark-content" />
+                <AppNavigator />
+                
+              </CartProvider>
+            </PincodeProvider>
+          </FavoriteProvider>
+        </AuthProvider>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 };
 

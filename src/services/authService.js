@@ -1,33 +1,26 @@
-// import api from '../components/api'; // Import your central Axios instance
+// import api from '../components/api'; // Correctly imports your central api.js
 
 // /**
 //  * Handles the user login API call.
-//  * @param {object} credentials - { login, password }
-//  * @returns {Promise<object>} The API response data.
 //  */
 // const login = async (credentials) => {
 //     try {
-//         // This now correctly uses your central 'api' instance.
 //         const response = await api.post('/auth/user/login', credentials);
 //         return response.data;
 //     } catch (error) {
-//         // Let the calling screen handle UI alerts.
-//         throw error.response?.data || new Error('Login API request failed');
+//         throw error.response?.data || new Error('Login request failed');
 //     }
 // };
 
 // /**
 //  * Handles the user registration API call.
-//  * @param {object} userData - The user's registration details.
-//  * @returns {Promise<object>} The API response data.
 //  */
 // const register = async (userData) => {
 //     try {
-//         // This also uses the central 'api' instance.
 //         const response = await api.post('/user/registerUser', userData);
 //         return response.data;
 //     } catch (error) {
-//         throw error.response?.data || new Error('Registration API request failed');
+//         throw error.response?.data || new Error('Registration request failed');
 //     }
 // };
 
@@ -39,36 +32,85 @@
 
 
 
+import api from '../components/api'; // Ensure this points to your axios instance
 
+// --- REGISTRATION FLOW ---
 
-
-import api from '../components/api'; // Correctly imports your central api.js
-
-/**
- * Handles the user login API call.
+/** 
+ * Step 1: Send Data -> Backend validates & saves to Temp -> Sends OTP 
  */
+const registerInitiate = async (userData) => {
+    try {
+        const response = await api.post('/user/register/initiate', userData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || new Error('Registration initiation failed');
+    }
+};
+
+/** 
+ * Step 2: Verify OTP -> Backend moves data to Users table -> Returns Token 
+ */
+const registerVerify = async (data) => {
+    try {
+        // payload: { mobile_number, otp }
+        const response = await api.post('/user/register/verify', data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || new Error('OTP Verification failed');
+    }
+};
+
+// --- LOGIN FLOW ---
+
 const login = async (credentials) => {
     try {
-        const response = await api.post('/auth/user/login', credentials);
+        const response = await api.post('/user/loginUser', credentials);
         return response.data;
     } catch (error) {
         throw error.response?.data || new Error('Login request failed');
     }
 };
 
-/**
- * Handles the user registration API call.
- */
-const register = async (userData) => {
+// --- FORGOT PASSWORD FLOW ---
+
+const forgotPasswordInitiate = async (data) => {
     try {
-        const response = await api.post('/user/registerUser', userData);
+        // payload: { mobile_number }
+        const response = await api.post('/user/forgot-password/initiate', data);
         return response.data;
     } catch (error) {
-        throw error.response?.data || new Error('Registration request failed');
+        throw error.response?.data || new Error('Failed to send OTP');
+    }
+};
+
+const resetPasswordVerify = async (data) => {
+    try {
+        // payload: { mobile_number, otp, new_password }
+        const response = await api.post('/user/forgot-password/verify', data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || new Error('Password reset failed');
+    }
+};
+
+// --- SHARED ---
+
+const resendOtp = async (data) => {
+    try {
+        // payload: { mobile_number }
+        const response = await api.post('/user/resend-otp', data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || new Error('Resend OTP failed');
     }
 };
 
 export const authService = {
     login,
-    register,
+    registerInitiate,
+    registerVerify,
+    forgotPasswordInitiate,
+    resetPasswordVerify,
+    resendOtp
 };

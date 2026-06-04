@@ -6,13 +6,15 @@ import ProductCard from '../components/ProductCard'; // Assuming you have a Prod
 
 const CategoryProductsScreen = ({ route, navigation }) => {
   // Get the category details passed from the previous screen
-  const { categoryId, categoryName } = route.params;
+  const { categoryId, categoryName, isSubcategory } = route.params;
   const { pincode } = usePincode(); // Get the current pincode to fetch relevant products
 
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Set the screen title to the category name
   useEffect(() => {
@@ -20,15 +22,30 @@ const CategoryProductsScreen = ({ route, navigation }) => {
   }, [navigation, categoryName]);
 
   // Function to fetch products for this category
-  const fetchProducts = async () => {
+  const fetchProducts = async (pageNum = 1) => {
     if (!pincode) return;
-    setIsLoading(true);
+    
+    if (pageNum === 1) {
+      setIsLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+    
     setError('');
     try {
-      const response = await productService.getProductsByCategory(categoryId, pincode, page);
+      let response;
+      if (isSubcategory) {
+        response = await productService.getProductsBySubcategory(categoryId, pincode, pageNum);
+      } else {
+        response = await productService.getProductsByCategory(categoryId, pincode, pageNum);
+      }
+
       if (response && response.status) {
         // If it's the first page, set the products. Otherwise, add to the list for infinite scroll.
-        setProducts(prev => (page === 1 ? response.data : [...prev, ...response.data]));
+        setProducts(prev => (pageNum === 1 ? response.data : [...prev, ...response.data]));
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+        }
       } else {
         setError(response.message || 'Could not load products.');
       }
@@ -36,23 +53,42 @@ const CategoryProductsScreen = ({ route, navigation }) => {
       setError(e.message || 'An error occurred.');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
   // Fetch products when the screen loads or pincode/category changes
   useEffect(() => {
-    fetchProducts();
-  }, [categoryId, pincode, page]);
+    setPage(1);
+    fetchProducts(1);
+  }, [categoryId, pincode]);
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && page < totalPages) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchProducts(nextPage);
+    }
+  };
+
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+    return (
+      <View style={{ paddingVertical: 20 }}>
+        <ActivityIndicator size="small" color="#0CA201" />
+      </View>
+    );
+  };
 
   if (isLoading && page === 1) {
     return <View style={styles.centered}><ActivityIndicator size="large" color="#0CA201" /></View>;
   }
 
-  if (error) {
+  if (error && products.length === 0) {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={fetchProducts}>
+        <TouchableOpacity onPress={() => fetchProducts(1)}>
           <Text style={styles.retryText}>Tap to retry</Text>
         </TouchableOpacity>
       </View>
@@ -64,23 +100,25 @@ const CategoryProductsScreen = ({ route, navigation }) => {
       data={products}
       renderItem={({ item }) => (
         <View style={styles.productCardContainer}>
-          <ProductCard 
-            product={item} 
-            onPress={() => navigation.navigate('ProductDetails', { product: item })} 
+          <ProductCard
+            product={item}
+            onPress={() => navigation.navigate('ProductDetails', { product: item })}
           />
         </View>
       )}
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item, index) => `${item.id}-${index}`}
       numColumns={2} // Creates a grid layout
       contentContainerStyle={styles.listContainer}
       ListEmptyComponent={
-        <View style={styles.centered}>
+        !isLoading && (
+          <View style={styles.centered}>
             <Text style={styles.emptyText}>No products found in this category.</Text>
-        </View>
+          </View>
+        )
       }
-      // Optional: Add infinite scroll later
-      // onEndReached={() => setPage(prev => prev + 1)}
-      // onEndReachedThreshold={0.5}
+      onEndReached={handleLoadMore}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={renderFooter}
     />
   );
 };

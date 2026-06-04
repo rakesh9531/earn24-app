@@ -15,7 +15,7 @@
 //   const [downline, setDownline] = useState([]);
 //   const [isLoading, setIsLoading] = useState(true);
 //   const [error, setError] = useState('');
-  
+
 //   const fetchDownline = useCallback(async () => {
 //     try {
 //       setIsLoading(true);
@@ -36,7 +36,7 @@
 //   useEffect(() => {
 //     fetchDownline();
 //   }, [fetchDownline]);
-  
+
 //   if (isLoading) {
 //     return (
 //         <SafeAreaView style={styles.container}>
@@ -201,7 +201,7 @@ const MyNetworkScreen = () => {
           isExpanded: false,
           isLoading: false,
         }));
-        
+
         // 3. Insert children into the array after the parent
         const finalNodes = [...newNodes];
         finalNodes[nodeIndex] = { ...finalNodes[nodeIndex], isLoading: false }; // Turn off loader
@@ -215,7 +215,7 @@ const MyNetworkScreen = () => {
         setNodes(finalNodes);
         setError("Failed to load downline."); // Or show toast
       }
-    } 
+    }
     // --- COLLAPSING a node ---
     else {
       let childCount = 0;
@@ -227,7 +227,7 @@ const MyNetworkScreen = () => {
           break; // Stop when we reach a sibling or an uncle
         }
       }
-      
+
       const newNodes = [...nodes];
       newNodes[nodeIndex] = { ...tappedNode, isExpanded: false }; // Close the node
       if (childCount > 0) {
@@ -243,15 +243,15 @@ const MyNetworkScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-        <Text style={styles.headerText}>My Network</Text>
-        {error && !isLoading && (
-            <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-                <TouchableOpacity onPress={fetchInitialNetwork} style={styles.retryButton}>
-                    <Text style={styles.retryButtonText}>Try Again</Text>
-                </TouchableOpacity>
-            </View>
-        )}
+      <Text style={styles.headerText}>My Network</Text>
+      {error && !isLoading && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={fetchInitialNetwork} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchInitialNetwork} colors={["#0CA201"]} />}
       >
@@ -301,14 +301,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   retryButton: {
-      backgroundColor: '#0CA201',
-      paddingVertical: 10,
-      paddingHorizontal: 25,
-      borderRadius: 20,
+    backgroundColor: '#0CA201',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 20,
   },
   retryButtonText: {
-      color: 'white',
-      fontWeight: 'bold',
+    color: 'white',
+    fontWeight: 'bold',
   },
   emptyText: {
     textAlign: 'center',

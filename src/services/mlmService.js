@@ -49,6 +49,8 @@ const getDownline = async () => {
 const findProductsByPincode = async (pincode, search = '') => {
   try {
     // This will call GET /api/inventory/search?pincode=...&search=...
+    console.log("findProductsByPincode-2->")
+
     const response = await api.get('/inventory/search', { params: { pincode, search } });
     return response.data;
   } catch (error) {
@@ -61,8 +63,12 @@ const findProductsByPincode = async (pincode, search = '') => {
 // --- ADD THIS NEW FUNCTION ---
 const getHomeScreenData = async (pincode) => {
   try {
+    console.log("getHomeScreenData")
     // This will call GET /api/home/data?pincode=...
     const response = await api.get('/inventory/data', { params: { pincode } });
+
+    console.log("response.data-->", response.data)
+
     return response.data;
   } catch (error) {
     console.error('API Error in getHomeScreenData:', error.response?.data || error.message);
@@ -124,5 +130,6 @@ export const mlmService = {
   getHomeScreenData,
   getRelatedProducts,
   getMyInitialNetworkTree, // Add new function
-  getDownlineForUser,  
+  getDownlineForUser, 
+  findProductsByPincode 
 };

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity }
 import { useRoute } from '@react-navigation/native';
 import { mlmService } from '../services/mlmService';
 // --- THIS IS THE CORRECTED IMPORT PATH BASED ON YOUR FILE STRUCTURE ---
-import ProfitItem from '../components/ProfitItem'; 
+import ProfitItem from '../components/ProfitItem';
 
 import moment from 'moment';
 
@@ -63,9 +63,9 @@ const TransactionHistoryScreen = () => {
   const renderEmptyComponent = () => {
     if (isLoading || error) return null;
     return (
-        <View style={styles.centered}>
-            <Text style={styles.emptyText}>No {title || type} history found.</Text>
-        </View>
+      <View style={styles.centered}>
+        <Text style={styles.emptyText}>No {title || type} history found.</Text>
+      </View>
     );
   }
 
@@ -73,27 +73,48 @@ const TransactionHistoryScreen = () => {
   // This function decides which component to render for each item in the list
   const renderItem = ({ item }) => {
     if (type === 'Profit') {
-        return <ProfitItem item={item} />;
+      return <ProfitItem item={item} />;
     }
-    // You would create a BVItem component for BV history.
-    // For now, we'll show a simple placeholder view.
+
+    const isSelf = item.bv_type === 'SELF' || !item.bv_type;
+
     return (
-        <View style={styles.itemContainer}>
-            <Text style={styles.bvText}>BV Earned: <Text style={styles.bvAmount}>{item.bv_earned}</Text></Text>
-            <Text style={styles.bvDate}>{moment(item.transaction_date).format('MMM D, YYYY')}</Text>
+      <View style={styles.itemContainer}>
+        <View style={styles.itemHeader}>
+          <View style={[styles.badge, isSelf ? styles.selfBadge : styles.downlineBadge]}>
+            <Text style={[styles.badgeText, isSelf ? styles.selfBadgeText : styles.downlineBadgeText]}>
+              {isSelf ? 'Personal' : 'Downline'}
+            </Text>
+          </View>
+          <Text style={styles.bvAmount}>+{parseFloat(item.bv_earned || 0).toFixed(2)} BV</Text>
         </View>
+
+        <View style={styles.body}>
+          <Text style={styles.description}>
+            {isSelf 
+              ? `Earned from purchase of ${item.product_name || 'Product'}` 
+              : `Earned from ${item.source_user_name || 'Downline Member'}'s purchase of ${item.product_name || 'Product'}`
+            }
+          </Text>
+          {item.notes && <Text style={styles.notes}>{item.notes}</Text>}
+        </View>
+
+        <Text style={styles.bvDate}>
+          {moment(item.transaction_date).format('MMM D, YYYY, hh:mm A')}
+        </Text>
+      </View>
     );
   };
 
   if (error && history.length === 0) {
-      return (
-          <View style={styles.centered}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity onPress={() => { setPage(1); setHistory([]); setIsListEnd(false); fetchHistory(); }} style={styles.retryButton}>
-                  <Text style={styles.retryButtonText}>Try Again</Text>
-              </TouchableOpacity>
-          </View>
-      );
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={() => { setPage(1); setHistory([]); setIsListEnd(false); fetchHistory(); }} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
@@ -119,11 +140,69 @@ const styles = StyleSheet.create({
   emptyText: { color: '#6c757d', fontSize: 16 },
   retryButton: { backgroundColor: '#0CA201', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 20 },
   retryButtonText: { color: 'white', fontWeight: 'bold' },
-  // Placeholder styles for a generic item (can be used by BV item)
-  itemContainer: { backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 10, },
-  bvText: { fontSize: 16, fontWeight: '500' },
-  bvAmount: { fontWeight: 'bold', color: '#007bff' },
-  bvDate: { fontSize: 13, color: '#6c757d', marginTop: 4 },
+  itemContainer: { 
+    backgroundColor: '#fff', 
+    padding: 16, 
+    borderRadius: 12, 
+    marginBottom: 12, 
+    elevation: 3, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 8,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  selfBadge: {
+    backgroundColor: '#E8F5E9',
+  },
+  downlineBadge: {
+    backgroundColor: '#E3F2FD',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  selfBadgeText: {
+    color: '#2E7D32',
+  },
+  downlineBadgeText: {
+    color: '#1565C0',
+  },
+  bvAmount: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#0CA201', 
+  },
+  body: {
+    marginBottom: 10,
+  },
+  description: { 
+    fontSize: 14, 
+    color: '#2D3748', 
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  notes: { 
+    fontSize: 12, 
+    color: '#718096', 
+    marginTop: 4, 
+    fontStyle: 'italic',
+  },
+  bvDate: { 
+    fontSize: 11, 
+    color: '#A0AEC0', 
+    textAlign: 'right',
+  },
 });
 
 export default TransactionHistoryScreen;
