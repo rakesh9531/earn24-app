@@ -180,60 +180,80 @@ const MyNetworkScreen = () => {
   );
 
   const handleToggleNode = async (nodeId) => {
-    const nodeIndex = nodes.findIndex(n => n.id === nodeId);
-    if (nodeIndex === -1) return;
-
-    const tappedNode = nodes[nodeIndex];
+    // Determine the clicked node level from the current closure (it doesn't change)
+    const currentNodes = [...nodes];
+    const initialIndex = currentNodes.findIndex(n => n.id === nodeId);
+    if (initialIndex === -1) return;
+    const tappedNode = currentNodes[initialIndex];
+    const tappedNodeLevel = tappedNode.level;
 
     // --- EXPANDING a node ---
     if (!tappedNode.isExpanded) {
-      // 1. Set loading state and update UI
-      const newNodes = [...nodes];
-      newNodes[nodeIndex] = { ...tappedNode, isExpanded: true, isLoading: true };
-      setNodes(newNodes);
+      // 1. Set loading state using functional update
+      setNodes(prevNodes => {
+        const idx = prevNodes.findIndex(n => n.id === nodeId);
+        if (idx === -1) return prevNodes;
+        const updated = [...prevNodes];
+        updated[idx] = { ...updated[idx], isExpanded: true, isLoading: true };
+        return updated;
+      });
 
       // 2. Fetch children from API
       try {
         const response = await mlmService.getDownlineForUser(nodeId);
-        const children = response.data.map(child => ({
+        const children = (response.data || []).map(child => ({
           ...child,
-          level: tappedNode.level + 1, // Children are one level deeper
+          level: tappedNodeLevel + 1, // Children are one level deeper
           isExpanded: false,
           isLoading: false,
         }));
 
-        // 3. Insert children into the array after the parent
-        const finalNodes = [...newNodes];
-        finalNodes[nodeIndex] = { ...finalNodes[nodeIndex], isLoading: false }; // Turn off loader
-        finalNodes.splice(nodeIndex + 1, 0, ...children);
-        setNodes(finalNodes);
+        // 3. Insert children into the array using functional update to get latest state
+        setNodes(prevNodes => {
+          const idx = prevNodes.findIndex(n => n.id === nodeId);
+          if (idx === -1) return prevNodes;
+          const updated = [...prevNodes];
+          updated[idx] = { ...updated[idx], isLoading: false, isExpanded: true }; // Turn off loader
+          updated.splice(idx + 1, 0, ...children);
+          return updated;
+        });
 
       } catch (e) {
-        // Handle error, maybe show a toast message
-        const finalNodes = [...newNodes];
-        finalNodes[nodeIndex] = { ...finalNodes[nodeIndex], isLoading: false, isExpanded: false }; // Revert on error
-        setNodes(finalNodes);
-        setError("Failed to load downline."); // Or show toast
+        // Revert on error
+        setNodes(prevNodes => {
+          const idx = prevNodes.findIndex(n => n.id === nodeId);
+          if (idx === -1) return prevNodes;
+          const updated = [...prevNodes];
+          updated[idx] = { ...updated[idx], isLoading: false, isExpanded: false };
+          return updated;
+        });
+        setError("Failed to load downline.");
       }
     }
     // --- COLLAPSING a node ---
     else {
-      let childCount = 0;
-      // Find all descendants to remove them
-      for (let i = nodeIndex + 1; i < nodes.length; i++) {
-        if (nodes[i].level > tappedNode.level) {
-          childCount++;
-        } else {
-          break; // Stop when we reach a sibling or an uncle
-        }
-      }
+      setNodes(prevNodes => {
+        const idx = prevNodes.findIndex(n => n.id === nodeId);
+        if (idx === -1) return prevNodes;
 
-      const newNodes = [...nodes];
-      newNodes[nodeIndex] = { ...tappedNode, isExpanded: false }; // Close the node
-      if (childCount > 0) {
-        newNodes.splice(nodeIndex + 1, childCount); // Remove all descendants
-      }
-      setNodes(newNodes);
+        const currentTappedNode = prevNodes[idx];
+        let childCount = 0;
+        // Find all descendants to remove them
+        for (let i = idx + 1; i < prevNodes.length; i++) {
+          if (prevNodes[i].level > currentTappedNode.level) {
+            childCount++;
+          } else {
+            break; // Stop when we reach a sibling or an uncle
+          }
+        }
+
+        const updated = [...prevNodes];
+        updated[idx] = { ...currentTappedNode, isExpanded: false }; // Close the node
+        if (childCount > 0) {
+          updated.splice(idx + 1, childCount); // Remove all descendants
+        }
+        return updated;
+      });
     }
   };
 
@@ -256,14 +276,28 @@ const MyNetworkScreen = () => {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchInitialNetwork} colors={["#0CA201"]} />}
       >
         {nodes.length > 0 ? (
-          nodes.map(node => (
-            <TreeNode
-              key={node.id}
-              node={node}
-              level={node.level}
-              onToggle={handleToggleNode}
-            />
-          ))
+          nodes.map((node, index) => {
+            // Determine if the node is the last child among its siblings in the flat list
+            let isLast = true;
+            for (let i = index + 1; i < nodes.length; i++) {
+              if (nodes[i].level === node.level) {
+                isLast = false;
+                break;
+              }
+              if (nodes[i].level < node.level) {
+                break;
+              }
+            }
+            return (
+              <TreeNode
+                key={node.id}
+                node={node}
+                level={node.level}
+                isLast={isLast}
+                onToggle={handleToggleNode}
+              />
+            );
+          })
         ) : (
           !isLoading && <Text style={styles.emptyText}>You have no direct referrals yet.</Text>
         )}

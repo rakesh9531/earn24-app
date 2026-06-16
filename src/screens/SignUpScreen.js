@@ -279,7 +279,7 @@ const SignUpScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.logo}>Earn 24</Text>
+          <Text style={styles.logo}>Earn24</Text>
           <View style={styles.formContainer}>
             <Text style={styles.title}>Sign Up</Text>
             <Text style={styles.subtitle}>Enter your credentials to continue</Text>

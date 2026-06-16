@@ -91,6 +91,11 @@ const MlmDashboardScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.actionsContainer}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('MyRewards')}>
+          <Icon name="gift-outline" size={22} color="#0CA201" />
+          <Text style={styles.actionButtonText}>My Rewards & Funds</Text>
+          <Icon name="chevron-forward-outline" size={22} color="#BDBDBD" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('TransactionHistory', { type: 'Profit', title: 'Profit History' })}>
           <Icon name="cash-outline" size={22} color="#388E3C" />
           <Text style={styles.actionButtonText}>View Profit History</Text>

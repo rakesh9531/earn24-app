@@ -45,10 +45,21 @@ const getInvoiceUrl = (orderId, token) => {
     return `${baseUrl}/${orderId}/invoice?token=${token}`;
 };
 
+const cancelOrder = async (orderId, reason) => {
+    try {
+        const response = await api.post(`/orders/${orderId}/cancel`, { reason });
+        return response.data;
+    } catch (error) {
+        console.error('API Error in cancelOrder:', error.response?.data || error.message);
+        throw error.response?.data || new Error('Failed to cancel order');
+    }
+};
+
 export const orderService = {
     createOrder,
     getOrderHistory,
     getOrderDetails,
     updatePaymentMethod,
     getInvoiceUrl,
+    cancelOrder,
 };

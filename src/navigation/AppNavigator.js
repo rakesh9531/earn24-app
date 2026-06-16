@@ -176,6 +176,7 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import PaymentWebView from '../screens/PaymentWebView';
 import InformationScreen from '../screens/InformationScreen';
 import FavouriteScreen from '../screens/FavouriteScreen';
+import MyRewardsScreen from '../screens/MyRewardsScreen';
 
 // A simple placeholder for unfinished tabs
 const PlaceholderScreen = ({ route }) => (
@@ -368,6 +369,11 @@ const AppNavigator = () => {
       />
 
       <Stack.Screen name="Information" component={InformationScreen} />
+      <Stack.Screen
+        name="MyRewards"
+        component={MyRewardsScreen}
+        options={{ title: 'My Rewards & Funds' }}
+      />
 
 
     </Stack.Navigator>

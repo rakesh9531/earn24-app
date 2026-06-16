@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Image, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { orderService } from '../services/orderService';
 import { useAuth } from '../context/AuthContext';
@@ -44,6 +44,9 @@ const OrderDetailsScreen = () => {
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingProduct, setIsFetchingProduct] = useState(false); // <-- ADD THIS STATE
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
 
     const fetchOrderDetails = useCallback(async () => {
         setIsLoading(true);
@@ -59,6 +62,32 @@ const OrderDetailsScreen = () => {
             setIsLoading(false);
         }
     }, [orderId, navigation]);
+
+    const handleCancelOrderSubmit = async () => {
+        if (!cancelReason.trim()) {
+            Alert.alert("Reason Required", "Please enter a reason for cancelling this order.");
+            return;
+        }
+
+        setIsCancelling(true);
+        try {
+            const response = await orderService.cancelOrder(order.id, cancelReason.trim());
+            if (response.status) {
+                Alert.alert("Success", "Your order has been cancelled successfully.");
+                setCancelReason('');
+                setIsCancelModalVisible(false);
+                fetchOrderDetails(); // Refresh details
+            } else {
+                Alert.alert("Error", response.message || "Failed to cancel order.");
+            }
+        } catch (error) {
+            console.error("Order cancel failed:", error);
+            const errMsg = error.message || "Failed to cancel order. Please try again.";
+            Alert.alert("Error", errMsg);
+        } finally {
+            setIsCancelling(false);
+        }
+    };
 
     // --- THIS IS THE FIX ---
     // The async function `fetchOrderDetails` is wrapped inside a non-async function.
@@ -182,9 +211,74 @@ const OrderDetailsScreen = () => {
                     </TouchableOpacity>
                 )}
 
+                {/* --- CANCEL ORDER BUTTON --- */}
+                {['PENDING', 'PENDING_PAYMENT', 'CONFIRMED'].includes(order.orderStatus) && (
+                    <TouchableOpacity 
+                        style={[styles.cancelOrderButton, isCancelling && styles.disabledButton]} 
+                        onPress={() => setIsCancelModalVisible(true)}
+                        disabled={isCancelling}
+                    >
+                        {isCancelling ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <>
+                                <Icon name="close-circle-outline" size={20} color="#fff" />
+                                <Text style={styles.cancelOrderButtonText}>Cancel Order</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                )}
+
                 {/* Extra space at the bottom for better scroll experience */}
                 <View style={{ height: 60 }} /> 
             </ScrollView>
+
+            {/* --- CANCELLATION MODAL --- */}
+            <Modal
+                visible={isCancelModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setIsCancelModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Cancel Order</Text>
+                        <Text style={styles.modalSubtitle}>Please provide a reason for cancelling this order:</Text>
+                        
+                        <TextInput
+                            style={styles.textInput}
+                            placeholder="Reason for cancellation (e.g., Change of mind, Incorrect address)"
+                            placeholderTextColor="#999"
+                            value={cancelReason}
+                            onChangeText={setCancelReason}
+                            multiline={true}
+                            numberOfLines={3}
+                        />
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.modalCancelBtn]} 
+                                onPress={() => setIsCancelModalVisible(false)}
+                                disabled={isCancelling}
+                            >
+                                <Text style={styles.modalCancelBtnText}>Dismiss</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.modalSubmitBtn]} 
+                                onPress={handleCancelOrderSubmit}
+                                disabled={isCancelling}
+                            >
+                                {isCancelling ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.modalSubmitBtnText}>Cancel Order</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -238,6 +332,101 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 16,
         color: '#fff',
+        fontWeight: '600',
+    },
+    cancelOrderButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#D32F2F',
+        margin: 15,
+        padding: 15,
+        borderRadius: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    disabledButton: {
+        opacity: 0.7,
+    },
+    cancelOrderButtonText: {
+        marginLeft: 10,
+        fontSize: 16,
+        color: '#fff',
+        fontWeight: '600',
+    },
+    // Cancel Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContainer: {
+        width: '100%',
+        backgroundColor: '#FFF',
+        borderRadius: 15,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#181725',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#6c757d',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    textInput: {
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        borderRadius: 8,
+        padding: 10,
+        fontSize: 15,
+        color: '#333',
+        backgroundColor: '#f8f9fa',
+        minHeight: 80,
+        textAlignVertical: 'top',
+        marginBottom: 20,
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalCancelBtn: {
+        backgroundColor: '#e9ecef',
+    },
+    modalCancelBtnText: {
+        color: '#495057',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    modalSubmitBtn: {
+        backgroundColor: '#D32F2F',
+    },
+    modalSubmitBtnText: {
+        color: '#fff',
+        fontSize: 15,
         fontWeight: '600',
     },
 });

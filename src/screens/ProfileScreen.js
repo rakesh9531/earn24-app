@@ -156,7 +156,9 @@ import {
     Image,
     Share,
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Modal,
+    TextInput
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { AuthContext } from '../context/AuthContext';
@@ -176,10 +178,56 @@ const MenuItem = ({ item, onPress }) => (
 );
 
 const ProfileScreen = ({ navigation }) => {
-    const { user, logout, token, setUser } = useContext(AuthContext);
+    const { user, logout, token, updateUser } = useContext(AuthContext);
     const [isUpdating, setIsUpdating] = useState(false);
 
+    // States for Editing profile details
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [editName, setEditName] = useState('');
+    const [editEmail, setEditEmail] = useState('');
+    const [editMobile, setEditMobile] = useState('');
+    const [isSavingText, setIsSavingText] = useState(false);
+
     const serverUrl = 'https://newapi.earn24.in';
+
+    const openEditModal = () => {
+        setEditName(user?.full_name || '');
+        setEditEmail(user?.email || '');
+        setEditMobile(user?.mobile_number || '');
+        setIsEditModalVisible(true);
+    };
+
+    const handleSaveDetails = async () => {
+        if (!editName.trim()) {
+            Alert.alert("Error", "Name cannot be empty.");
+            return;
+        }
+
+        try {
+            setIsSavingText(true);
+            const response = await axios.put(`${serverUrl}/api/user/profile/update`, {
+                full_name: editName.trim(),
+                email: editEmail.trim(),
+                mobile_number: editMobile.trim()
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.data.status) {
+                updateUser(response.data.user);
+                setIsEditModalVisible(false);
+                Alert.alert("Success", "Profile details updated successfully!");
+            }
+        } catch (error) {
+            console.error("DEBUG: Update details error:", error);
+            const errMsg = error.response?.data?.message || "Could not update details.";
+            Alert.alert("Update Failed", errMsg);
+        } finally {
+            setIsSavingText(false);
+        }
+    };
 
     // Formats Rank (e.g. DISTRIBUTOR_GOLD -> Distributor Gold)
     const formatRank = (rank) => {
@@ -190,7 +238,7 @@ const ProfileScreen = ({ navigation }) => {
     const handleShare = async (referralCode) => {
         try {
             await Share.share({
-                message: `Join Earn 24 with my referral code: ${referralCode}`,
+                message: `Join Earn24 with my referral code: ${referralCode}`,
             });
         } catch (error) {
             Alert.alert(error.message);
@@ -234,7 +282,7 @@ const ProfileScreen = ({ navigation }) => {
             });
 
             if (response.data.status) {
-                setUser(response.data.user);
+                updateUser(response.data.user);
                 Alert.alert("Success", "Profile photo updated!");
             }
         } catch (error) {
@@ -249,6 +297,7 @@ const ProfileScreen = ({ navigation }) => {
         { icon: 'wallet-outline', text: 'My Wallet & Network', bgColor: '#E8F5E9', iconColor: '#2E7D32', action: () => navigation.navigate('MlmDashboard') },
         { icon: 'briefcase-outline', text: 'Order History', bgColor: '#E3F2FD', iconColor: '#1565C0', action: () => navigation.navigate('OrderHistory') },
         { icon: 'location-outline', text: 'Delivery Address', bgColor: '#FFF3E0', iconColor: '#E65100', action: () => navigation.navigate('AddressList') },
+        { icon: 'create-outline', text: 'Edit Personal Details', bgColor: '#E0F7FA', iconColor: '#00838F', action: openEditModal },
         { icon: 'information-circle-outline', text: 'About Earn24', action: () => navigation.navigate('Information', { pageKey: 'about_us', title: 'About Us' }) },
         { icon: 'shield-checkmark-outline', text: 'Privacy Policy', action: () => navigation.navigate('Information', { pageKey: 'privacy_policy', title: 'Privacy' }) },
         { icon: 'document-text-outline', text: 'Terms & Conditions', action: () => navigation.navigate('Information', { pageKey: 'terms_conditions', title: 'Terms' }) },
@@ -316,7 +365,7 @@ const ProfileScreen = ({ navigation }) => {
                     // </View>
 
                     <View style={[styles.content, styles.loggedOutContent]}>
-                        <Text style={styles.loggedOutTitle}>Welcome to Earn 24</Text>
+                        <Text style={styles.loggedOutTitle}>Welcome to Earn24</Text>
                         <Text style={styles.loggedOutSubtitle}>Please log in or sign up to continue</Text>
                         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('SignUp')}><Text style={styles.buttonText}>Sign Up</Text></TouchableOpacity>
                         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}><Text style={styles.buttonText}>Log In</Text></TouchableOpacity>
@@ -325,6 +374,77 @@ const ProfileScreen = ({ navigation }) => {
 
                 )}
             </ScrollView>
+
+            <Modal
+                visible={isEditModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setIsEditModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Edit Profile Details</Text>
+                        
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Full Name</Text>
+                            <TextInput
+                                style={styles.textInput}
+                                value={editName}
+                                onChangeText={setEditName}
+                                placeholder="Enter Full Name"
+                                placeholderTextColor="#999"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Email Address</Text>
+                            <TextInput
+                                style={styles.textInput}
+                                value={editEmail}
+                                onChangeText={setEditEmail}
+                                placeholder="Enter Email Address"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                placeholderTextColor="#999"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Mobile Number</Text>
+                            <TextInput
+                                style={styles.textInput}
+                                value={editMobile}
+                                onChangeText={setEditMobile}
+                                placeholder="Enter Mobile Number"
+                                keyboardType="phone-pad"
+                                placeholderTextColor="#999"
+                            />
+                        </View>
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.cancelButton]} 
+                                onPress={() => setIsEditModalVisible(false)}
+                                disabled={isSavingText}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.saveButton]} 
+                                onPress={handleSaveDetails}
+                                disabled={isSavingText}
+                            >
+                                {isSavingText ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <Text style={styles.saveButtonText}>Save</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -362,7 +482,80 @@ const styles = StyleSheet.create({
     loggedOutTitle: { fontSize: 24, fontWeight: 'bold', color: '#181725', marginBottom: 10 },
     loggedOutSubtitle: { fontSize: 16, color: '#7C7C7C', marginBottom: 40, textAlign: 'center' },
 
-
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContainer: {
+        width: '100%',
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#181725',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    inputGroup: {
+        marginBottom: 16,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#4F4F4F',
+        marginBottom: 6,
+    },
+    textInput: {
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        fontSize: 16,
+        color: '#181725',
+        backgroundColor: '#F8FAFC',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+        gap: 12,
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#F1F5F9',
+    },
+    cancelButtonText: {
+        color: '#64748B',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    saveButton: {
+        backgroundColor: '#0CA201',
+    },
+    saveButtonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '700',
+    },
 });
 
 export default ProfileScreen;

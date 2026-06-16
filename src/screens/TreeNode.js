@@ -95,16 +95,30 @@ import Icon from 'react-native-vector-icons/Ionicons';
 const TreeNode = ({ node, onToggle, level, isLast }) => {
   const hasChildren = node.children_count > 0;
 
+  const renderIndentation = () => {
+    const indents = [];
+    for (let i = 0; i < level; i++) {
+      const isCurrent = i === level - 1;
+      indents.push(
+        <View key={i} style={styles.lineContainer}>
+          <View
+            style={[
+              styles.verticalLine,
+              isCurrent && isLast && styles.shortVerticalLine,
+            ]}
+          />
+          {isCurrent && <View style={styles.horizontalLine} />}
+        </View>
+      );
+    }
+    return indents;
+  };
+
   return (
     <View style={styles.nodeContainer}>
       {/* This View will render the tree lines */}
       <View style={styles.indentationContainer}>
-        {level > 0 && (
-          <View style={styles.lineContainer}>
-            <View style={[styles.verticalLine, isLast && styles.shortVerticalLine]} />
-            <View style={styles.horizontalLine} />
-          </View>
-        )}
+        {renderIndentation()}
       </View>
 
       {/* This is the actual content row */}
@@ -141,28 +155,27 @@ const TreeNode = ({ node, onToggle, level, isLast }) => {
 const styles = StyleSheet.create({
   nodeContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    // We control indentation from within the component now
-    marginLeft: 15, 
+    alignItems: 'stretch', // Stretches indentationContainer to match touchable height
+    marginLeft: 15,
   },
   // Renders the vertical lines for indentation
   indentationContainer: {
     flexDirection: 'row',
-    height: '100%',
   },
   lineContainer: {
     width: 20, // Width of each indentation level
-    height: '100%',
     alignItems: 'center',
+    position: 'relative',
   },
   verticalLine: {
     width: 1,
     height: '100%',
     backgroundColor: '#dcdcdc',
+    position: 'absolute',
   },
   // If this is the last node, the vertical line shouldn't extend all the way down
   shortVerticalLine: {
-    height: '50%', 
+    height: '50%',
     position: 'absolute',
     top: 0,
   },

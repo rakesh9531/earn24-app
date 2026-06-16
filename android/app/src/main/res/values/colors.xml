@@ -5,4 +5,7 @@
 
     <!-- The green color for your "Earn 24" text -->
     <color name="splash_text_green">#00C853</color>
+
+    <!-- White background for adaptive icons -->
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>

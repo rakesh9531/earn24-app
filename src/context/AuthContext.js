@@ -294,9 +294,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 5. PASS TOKEN IN VALUE
+    const updateUser = async (newUserData) => {
+        try {
+            await AsyncStorage.setItem(USER_KEY, JSON.stringify(newUserData));
+            setUser(newUserData);
+        } catch (e) {
+            console.error("AuthContext: Failed to update user data in storage.", e);
+        }
+    };
+
+    // 5. PASS TOKEN AND UPDATE USER IN VALUE
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );
