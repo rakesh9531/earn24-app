@@ -177,6 +177,9 @@ import PaymentWebView from '../screens/PaymentWebView';
 import InformationScreen from '../screens/InformationScreen';
 import FavouriteScreen from '../screens/FavouriteScreen';
 import MyRewardsScreen from '../screens/MyRewardsScreen';
+import KYCVerificationScreen from '../screens/KYCVerificationScreen';
+import WithdrawalScreen from '../screens/WithdrawalScreen';
+
 
 // A simple placeholder for unfinished tabs
 const PlaceholderScreen = ({ route }) => (
@@ -374,6 +377,17 @@ const AppNavigator = () => {
         component={MyRewardsScreen}
         options={{ title: 'My Rewards & Funds' }}
       />
+      <Stack.Screen
+        name="KYCVerification"
+        component={KYCVerificationScreen}
+        options={{ title: 'KYC Verification' }}
+      />
+      <Stack.Screen
+        name="Withdrawal"
+        component={WithdrawalScreen}
+        options={{ title: 'Request Withdrawal' }}
+      />
+
 
 
     </Stack.Navigator>

@@ -155,7 +155,6 @@ import {
     ScrollView,
     Image,
     Share,
-    Alert,
     ActivityIndicator,
     Modal,
     TextInput
@@ -164,6 +163,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { AuthContext } from '../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
+import { useAlert } from '../components/CustomAlert';
 
 const MenuItem = ({ item, onPress }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
@@ -180,13 +180,12 @@ const MenuItem = ({ item, onPress }) => (
 const ProfileScreen = ({ navigation }) => {
     const { user, logout, token, updateUser } = useContext(AuthContext);
     const [isUpdating, setIsUpdating] = useState(false);
-
-    // States for Editing profile details
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editName, setEditName] = useState('');
     const [editEmail, setEditEmail] = useState('');
     const [editMobile, setEditMobile] = useState('');
     const [isSavingText, setIsSavingText] = useState(false);
+    const { showAlert, AlertModal } = useAlert();
 
     const serverUrl = 'https://newapi.earn24.in';
 
@@ -199,7 +198,7 @@ const ProfileScreen = ({ navigation }) => {
 
     const handleSaveDetails = async () => {
         if (!editName.trim()) {
-            Alert.alert("Error", "Name cannot be empty.");
+            showAlert('error', 'Name Required', 'Name cannot be empty.');
             return;
         }
 
@@ -210,20 +209,18 @@ const ProfileScreen = ({ navigation }) => {
                 email: editEmail.trim(),
                 mobile_number: editMobile.trim()
             }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (response.data.status) {
                 updateUser(response.data.user);
                 setIsEditModalVisible(false);
-                Alert.alert("Success", "Profile details updated successfully!");
+                showAlert('success', 'Profile Updated! 🎉', 'Your profile details have been updated successfully.');
             }
         } catch (error) {
             console.error("DEBUG: Update details error:", error);
             const errMsg = error.response?.data?.message || "Could not update details.";
-            Alert.alert("Update Failed", errMsg);
+            showAlert('error', 'Update Failed', errMsg);
         } finally {
             setIsSavingText(false);
         }
@@ -238,10 +235,10 @@ const ProfileScreen = ({ navigation }) => {
     const handleShare = async (referralCode) => {
         try {
             await Share.share({
-                message: `Join Earn24 with my referral code: ${referralCode}`,
+                message: `Sign Up Earn24 with my referral code: ${referralCode}`,
             });
         } catch (error) {
-            Alert.alert(error.message);
+            showAlert('error', 'Share Failed', error.message);
         }
     };
 
@@ -283,11 +280,11 @@ const ProfileScreen = ({ navigation }) => {
 
             if (response.data.status) {
                 updateUser(response.data.user);
-                Alert.alert("Success", "Profile photo updated!");
+                showAlert('success', 'Photo Updated! 📸', 'Your profile photo has been updated.');
             }
         } catch (error) {
             console.error("DEBUG: Upload Error:", error);
-            Alert.alert("Upload Failed", "Could not connect to server.");
+            showAlert('error', 'Upload Failed', 'Could not connect to server. Please try again.');
         } finally {
             setIsUpdating(false);
         }
@@ -295,6 +292,8 @@ const ProfileScreen = ({ navigation }) => {
 
     const menuItems = [
         { icon: 'wallet-outline', text: 'My Wallet & Network', bgColor: '#E8F5E9', iconColor: '#2E7D32', action: () => navigation.navigate('MlmDashboard') },
+        { icon: 'card-outline', text: 'Withdrawal Requests', bgColor: '#FCE7F3', iconColor: '#DB2777', action: () => navigation.navigate('Withdrawal') },
+        { icon: 'shield-checkmark-outline', text: 'KYC Verification', bgColor: '#F3E8FF', iconColor: '#9333EA', action: () => navigation.navigate('KYCVerification') },
         { icon: 'briefcase-outline', text: 'Order History', bgColor: '#E3F2FD', iconColor: '#1565C0', action: () => navigation.navigate('OrderHistory') },
         { icon: 'location-outline', text: 'Delivery Address', bgColor: '#FFF3E0', iconColor: '#E65100', action: () => navigation.navigate('AddressList') },
         { icon: 'create-outline', text: 'Edit Personal Details', bgColor: '#E0F7FA', iconColor: '#00838F', action: openEditModal },
@@ -445,6 +444,7 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
+            <AlertModal />
         </SafeAreaView>
     );
 };
@@ -473,14 +473,10 @@ const styles = StyleSheet.create({
     logoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 40, padding: 15 },
     logoutButtonText: { color: '#D32F2F', marginLeft: 10, fontSize: 16, fontWeight: 'bold' },
     loggedOutContent: { paddingTop: 150, alignItems: 'center', paddingHorizontal: 25 },
-    loggedOutTitle: { fontSize: 24, fontWeight: 'bold', color: '#181725', marginBottom: 30 },
-    button: { backgroundColor: '#0CA201', paddingVertical: 18, borderRadius: 15, alignItems: 'center', justifyContent: 'center', width: '100%', marginBottom: 15 },
-    buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-
-    content: { paddingBottom: 40 },
-    loggedOutContent: { paddingTop: 150, alignItems: 'center', paddingHorizontal: 25 },
     loggedOutTitle: { fontSize: 24, fontWeight: 'bold', color: '#181725', marginBottom: 10 },
     loggedOutSubtitle: { fontSize: 16, color: '#7C7C7C', marginBottom: 40, textAlign: 'center' },
+    button: { backgroundColor: '#0CA201', paddingVertical: 18, borderRadius: 15, alignItems: 'center', justifyContent: 'center', width: '100%', marginBottom: 15 },
+    buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 
     // Modal Styles
     modalOverlay: {

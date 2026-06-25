@@ -118,5 +118,4 @@ dependencies {
     }
 }
 
-// VVV ADD THIS LINE AT THE VERY END OF THE FILE VVV
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"

@@ -177,10 +177,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput,
-  ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator
+  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { authService } from '../services/authService';
+import { useAlert } from '../components/CustomAlert';
 
 // --- Local Components (Keep them here for self-containment) ---
 const CustomTextInput = ({ label, icon, isPassword, editable = true, ...props }) => {
@@ -219,6 +220,7 @@ const SignUpScreen = ({ navigation }) => {
   const [referralCode, setReferralCode] = useState('');
   const [isDefaultSponsor, setIsDefaultSponsor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { showAlert, AlertModal } = useAlert();
 
   useEffect(() => {
     if (isDefaultSponsor) {
@@ -229,15 +231,15 @@ const SignUpScreen = ({ navigation }) => {
   const handleSignUp = async () => {
     // 1. Validation
     if (!fullName || !username || !email || !mobileNumber || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all required fields.");
+      showAlert('error', 'Missing Fields', 'Please fill in all required fields.');
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
+      showAlert('error', 'Passwords Mismatch', 'Your passwords do not match. Please re-enter.');
       return;
     }
     if (mobileNumber.length !== 10) {
-      Alert.alert("Error", "Please enter a valid 10-digit mobile number.");
+      showAlert('error', 'Invalid Mobile', 'Please enter a valid 10-digit mobile number.');
       return;
     }
 
@@ -258,18 +260,15 @@ const SignUpScreen = ({ navigation }) => {
       const response = await authService.registerInitiate(userData);
 
       if (response && response.status === true) {
-        Alert.alert("OTP Sent", `Verification code sent to ${mobileNumber}`);
-        
-        // 3. Navigate to OTP Screen
-        navigation.navigate('OtpVerification', { 
-            mobileNumber: mobileNumber,
-            flow: 'REGISTER' 
+        showAlert('success', 'OTP Sent! 📱', `Verification code sent to ${mobileNumber}`, {
+          confirmText: 'Continue',
+          onConfirm: () => navigation.navigate('OtpVerification', { mobileNumber, flow: 'REGISTER' }),
         });
       } else {
         throw new Error(response.message || 'An unknown error occurred.');
       }
     } catch (error) {
-      Alert.alert("Sign Up Failed", error.message || 'An unexpected error occurred.');
+      showAlert('error', 'Sign Up Failed', error.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -309,14 +308,17 @@ const SignUpScreen = ({ navigation }) => {
                 {isLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.signUpButtonText}>Get OTP</Text>}
             </TouchableOpacity>
 
+            {/* FIX: Sign In link — use a row View instead of nested Text to prevent word wrapping hiding last word */}
             <TouchableOpacity style={styles.footerTextContainer} onPress={() => navigation.replace('Login')}>
-              <Text style={styles.footerText}>
-                Already have an account? <Text style={styles.linkText}>Sign In</Text>
-              </Text>
+              <View style={styles.footerRow}>
+                <Text style={styles.footerText}>Already have an account?</Text>
+                <Text style={[styles.footerText, styles.linkText]}>Sign In</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <AlertModal />
     </SafeAreaView>
   );
 };
@@ -344,6 +346,8 @@ const styles = StyleSheet.create({
   disabledButton: { opacity: 0.6 },
   signUpButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
   footerTextContainer: { marginTop: 25, alignItems: 'center' },
+  // FIX: row layout prevents nested-text word-wrap bug on small screens
+  footerRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 4 },
   footerText: { fontSize: 14, color: '#181725' },
 });
 

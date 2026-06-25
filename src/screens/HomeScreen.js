@@ -738,7 +738,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { mlmService } from '../services/mlmService';
-import { productService } from '../services/productService';
 import ProductCarousel from '../components/ProductCarousel';
 import FloatingCartBar from '../components/FloatingCartBar';
 import CartIcon from '../components/CartIcon';
@@ -778,43 +777,9 @@ const HomeScreen = ({ navigation }) => {
   // --- STATE TO REMEMBER THE SELECTED CATEGORY ---
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
-  // --- INFINITE SCROLL STATE ---
-  const [extraProducts, setExtraProducts] = useState([]);
-  const [fetchPage, setFetchPage] = useState(1);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-
-  // Reset pagination whenever category changes
-  useEffect(() => {
-    setExtraProducts([]);
-    setFetchPage(1); 
-    setHasMore(true);
-  }, [selectedCategoryId]);
-
-  const fetchMoreProducts = async () => {
-    // If loading, or reached end, or missing data, do nothing
-    if (isFetchingMore || !hasMore || !selectedCategoryId || !pincode) return;
-    
-    setIsFetchingMore(true);
-    try {
-      const response = await productService.getProductsByCategory(selectedCategoryId, pincode, fetchPage);
-      if (response && response.status && response.data.length > 0) {
-        setExtraProducts(prev => {
-          // Keep a set of IDs we already appended to efficiently filter duplicates
-          const currentIds = new Set(prev.map(p => p.offer_id || p.id));
-          const newItems = response.data.filter(p => !currentIds.has(p.offer_id || p.id));
-          return [...prev, ...newItems];
-        });
-        setFetchPage(prev => prev + 1);
-      } else {
-        setHasMore(false); // No more products from API
-      }
-    } catch (error) {
-      console.error("Error fetching more products:", error);
-    } finally {
-      setIsFetchingMore(false);
-    }
-  };
+  const handleCategorySelect = useCallback((categoryId) => {
+    setSelectedCategoryId(categoryId);
+  }, []);
 
   const loadData = useCallback(async (currentPincode) => {
     if (!currentPincode) return;
@@ -826,7 +791,8 @@ const HomeScreen = ({ navigation }) => {
         setHomeData(response.data);
         // --- SET THE FIRST CATEGORY AS THE DEFAULT SELECTION ---
         if (response.data.categories && response.data.categories.length > 0) {
-           setSelectedCategoryId(response.data.categories[0].id);
+           const defaultCatId = response.data.categories[0].id;
+           setSelectedCategoryId(defaultCatId);
         }
       } else {
         setError(response.message || "Failed to load data.");
@@ -863,29 +829,8 @@ const HomeScreen = ({ navigation }) => {
     const sections = homeData.productSections.filter(
         section => section.parent_category_id === selectedCategoryId
     );
-
-    // Merge the extra fetched products into the first matching section
-    if (sections.length > 0) {
-      const firstSection = { ...sections[0] };
-      const combined = [...firstSection.products, ...extraProducts];
-      
-      // Deduplicate the combined list
-      const uniqueProducts = [];
-      const seenIds = new Set();
-      for (const p of combined) {
-        const id = p.offer_id || p.id;
-        if (!seenIds.has(id)) {
-          seenIds.add(id);
-          uniqueProducts.push(p);
-        }
-      }
-      
-      firstSection.products = uniqueProducts;
-      return [firstSection, ...sections.slice(1)];
-    }
-
     return sections;
-  }, [homeData, selectedCategoryId, extraProducts]);
+  }, [homeData, selectedCategoryId]);
 
   if (isLoadingPincode) {
     return <View style={styles.centeredLoader}><ActivityIndicator size="large" color="#0CA201" /></View>;
@@ -897,7 +842,6 @@ const HomeScreen = ({ navigation }) => {
       section={item}
       onProductPress={(product) => navigation.navigate('ProductDetails', { product })}
       onSeeAllPress={(s) => navigation.navigate('CategoryProducts', { 
-        // Pass the actual category ID, not the Product Section ID
         categoryId: s.category_id || s.parent_category_id || selectedCategoryId, 
         categoryName: s.title.replace('Best in ', '') 
       })}
@@ -926,27 +870,20 @@ const HomeScreen = ({ navigation }) => {
             ref={flatListRef}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            // --- USE THE NEW FILTERED LIST ---
             data={filteredProductSections}
             renderItem={renderProductCarousel}
             keyExtractor={(item) => item.id.toString()}
             ListHeaderComponent={
-              // --- CONNECT THE HEADER TO THE BRAIN ---
               <HomeScreenHeader 
                 banners={homeData.banners} 
                 categories={homeData.categories} 
                 navigation={navigation}
                 selectedCategoryId={selectedCategoryId}
-                onCategorySelect={setSelectedCategoryId}
+                onCategorySelect={handleCategorySelect}
               />
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
-            onEndReached={fetchMoreProducts}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              isFetchingMore ? <ActivityIndicator size="large" color="#0CA201" style={{ marginVertical: 20 }} /> : null
-            }
             refreshControl={
               <RefreshControl refreshing={isLoading} onRefresh={() => loadData(pincode)} colors={["#0CA201"]} />
             }
@@ -964,6 +901,37 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  sectionHeaderContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginTop: 20,
+    marginBottom: 15, 
+    paddingHorizontal: 20 
+  },
+  sectionHeaderTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold',
+    color: '#111'
+  },
+  sectionHeaderSeeAll: { 
+    color: '#0CA201', 
+    fontWeight: 'bold' 
+  },
+  gridRowContainer: { 
+    flexDirection: 'row', 
+    paddingHorizontal: 15, 
+    justifyContent: 'space-between' 
+  },
+  gridRowItem: { 
+    width: '48%',
+    marginBottom: 15 
+  },
+  gridRowItemPlaceholder: {
+    width: '48%',
+    backgroundColor: 'transparent',
+    marginBottom: 15
+  },
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   centeredLoader: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   listContent: { paddingBottom: 80 },

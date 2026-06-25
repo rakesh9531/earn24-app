@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import ProductCard from './ProductCard'; // Note: This uses the card above
 
@@ -18,11 +18,14 @@ const ProductCarousel = ({ section, onProductPress, onSeeAllPress }) => {
         </TouchableOpacity>
       </View>
       <View style={styles.gridContainer}>
-        {section.products.map((item, index) => (
-          <View key={item.offer_id ? item.offer_id.toString() : (item.id ? item.id.toString() : index.toString())} style={styles.gridItem}>
-            <ProductCard product={item} onPress={() => onProductPress(item)} />
-          </View>
-        ))}
+        {section.products.map((item, index) => {
+          if (!item) return null;
+          return (
+            <View key={item.offer_id ? item.offer_id.toString() : (item.id ? item.id.toString() : index.toString())} style={styles.gridItem}>
+              <ProductCard product={item} onPress={() => onProductPress(item)} />
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -44,4 +47,8 @@ const styles = StyleSheet.create({
     marginBottom: 15 
   },
 });
-export default ProductCarousel;
+export default memo(ProductCarousel, (prevProps, nextProps) => {
+  return prevProps.section.id === nextProps.section.id &&
+         prevProps.section.title === nextProps.section.title &&
+         prevProps.section.products === nextProps.section.products;
+});

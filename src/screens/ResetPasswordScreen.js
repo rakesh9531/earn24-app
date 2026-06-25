@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { authService } from '../services/authService';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useAlert } from '../components/CustomAlert';
 
 const ResetPasswordScreen = ({ navigation, route }) => {
   const { mobileNumber } = route.params;
@@ -10,11 +11,12 @@ const ResetPasswordScreen = ({ navigation, route }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPassVisible, setIsPassVisible] = useState(false);
+  const { showAlert, AlertModal } = useAlert();
 
   const handleReset = async () => {
-    if (otp.length !== 6) return Alert.alert("Error", "Invalid OTP length");
-    if (!newPassword || newPassword.length < 6) return Alert.alert("Error", "Password too short");
-    if (newPassword !== confirmPassword) return Alert.alert("Error", "Passwords do not match");
+    if (otp.length !== 6) { showAlert('error', 'Invalid OTP', 'OTP must be exactly 6 digits.'); return; }
+    if (!newPassword || newPassword.length < 6) { showAlert('error', 'Weak Password', 'Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmPassword) { showAlert('error', 'Passwords Mismatch', 'Your new passwords do not match.'); return; }
 
     setIsLoading(true);
     try {
@@ -25,11 +27,13 @@ const ResetPasswordScreen = ({ navigation, route }) => {
       });
 
       if (response.status === true) {
-        Alert.alert("Success", "Password reset successfully. Please Login.");
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        showAlert('success', 'Password Reset! 🔒', 'Your password has been reset successfully.', {
+          confirmText: 'Go to Login',
+          onConfirm: () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }),
+        });
       }
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to reset password.");
+      showAlert('error', 'Reset Failed', error.message || 'Failed to reset password. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +90,7 @@ const ResetPasswordScreen = ({ navigation, route }) => {
           {isLoading ? <ActivityIndicator color="#FFF"/> : <Text style={styles.btnText}>Reset Password</Text>}
         </TouchableOpacity>
       </View>
+      <AlertModal />
     </SafeAreaView>
   );
 };

@@ -199,13 +199,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
     View, Text, StyleSheet, SafeAreaView, ScrollView, 
-    TextInput, TouchableOpacity, ActivityIndicator, Switch, 
-    Alert 
+    TextInput, TouchableOpacity, ActivityIndicator, Switch
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { addressService } from '../services/addressService';
+import { useAlert } from '../components/CustomAlert';
 
 // --- Validation Schema ---
 const AddressSchema = Yup.object().shape({
@@ -225,11 +225,9 @@ const AddEditAddressScreen = () => {
   
   const existingAddress = route.params?.addressToEdit  || null;
   const isEditMode = !!existingAddress;
-
   const [isLoading, setIsLoading] = useState(false);
-
-  // FIX 1: Defined a visible color for placeholders (Dark Grey)
-  const PLACEHOLDER_COLOR = "#888888"; 
+  const PLACEHOLDER_COLOR = "#888888";
+  const { showAlert, AlertModal } = useAlert();
 
   const handleFormSubmit = async (values) => {
     setIsLoading(true);
@@ -244,13 +242,13 @@ const AddEditAddressScreen = () => {
         }
 
         if (response.status) {
-            Alert.alert('Success', response.message || 'Address saved successfully!');
-            navigation.goBack();
+            showAlert('success', isEditMode ? 'Address Updated!' : 'Address Added!', response.message || 'Address saved successfully.');
+            setTimeout(() => navigation.goBack(), 1200);
         } else {
-            Alert.alert('Error', response.message || 'An unknown error occurred.');
+            showAlert('error', 'Save Failed', response.message || 'An unknown error occurred.');
         }
     } catch (error) {
-        Alert.alert('Error', error.message || 'An error occurred while saving the address.');
+        showAlert('error', 'Error', error.message || 'An error occurred while saving the address.');
     } finally {
         setIsLoading(false);
     }
@@ -389,6 +387,7 @@ const AddEditAddressScreen = () => {
           </ScrollView>
         )}
       </Formik>
+      <AlertModal />
     </SafeAreaView>
   );
 };
@@ -407,16 +406,16 @@ const styles = StyleSheet.create({
     rowItem: { flex: 1, marginHorizontal: 5 },
     addressTypeContainer: { flexDirection: 'row', gap: 10 },
     
-    // FIX 2: Added minWidth and alignment to prevent text clipping
+    // FIX: use flex:1 so all 3 buttons share row space equally — prevents overflow clipping on small screens
     addressTypeButton: { 
         paddingVertical: 10, 
-        paddingHorizontal: 20, 
+        paddingHorizontal: 8,     // reduced to prevent overflow
         borderRadius: 20, 
         borderWidth: 1, 
         borderColor: '#ced4da',
-        minWidth: 75,             // Forces the button to be wide enough
-        justifyContent: 'center', // Centers text vertically
-        alignItems: 'center',     // Centers text horizontally
+        flex: 1,                  // each button takes 1/3 of available row width
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     
     addressTypeSelected: { backgroundColor: '#007bff', borderColor: '#007bff' },

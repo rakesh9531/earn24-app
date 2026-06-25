@@ -1084,7 +1084,7 @@
 
 
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
 import Swiper from 'react-native-swiper';
 
@@ -1107,23 +1107,26 @@ const SIZES = {
 };
 
 // --- Sub-Category Item Component ---
-const SubCategoryItem = ({ item, navigation }) => (
-  <TouchableOpacity 
-    style={styles.subCategoryItem} 
-    onPress={() => navigation.navigate('CategoryProducts', { categoryId: item.id, categoryName: item.name, isSubcategory: true })}
-  >
-    <View style={styles.subCategoryImageContainer}>
-      <Image 
-        source={item.image_url 
-            ? { uri: `https://newapi.earn24.in${item.image_url}` } 
-            : require('../assets/images/banner.png')
-        } 
-        style={styles.subCategoryImage} 
-      />
-    </View>
-    <Text style={styles.subCategoryName} numberOfLines={2}>{item.name}</Text>
-  </TouchableOpacity>
-);
+const SubCategoryItem = memo(({ item, navigation }) => {
+  if (!item) return null;
+  return (
+    <TouchableOpacity 
+      style={styles.subCategoryItem} 
+      onPress={() => navigation.navigate('CategoryProducts', { categoryId: item.id, categoryName: item.name, isSubcategory: true })}
+    >
+      <View style={styles.subCategoryImageContainer}>
+        <Image 
+          source={item.image_url 
+              ? { uri: `https://newapi.earn24.in${item.image_url}` } 
+              : require('../assets/images/banner.png')
+          } 
+          style={styles.subCategoryImage} 
+        />
+      </View>
+      <Text style={styles.subCategoryName} numberOfLines={2}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+});
 
 // --- The Main Header Component, now controlled by HomeScreen ---
 const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId, onCategorySelect }) => {
@@ -1132,7 +1135,8 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
     Alert.alert("Banner Tapped", `You tapped on banner: ${banner.title || 'Untitled'}`);
   };
 
-  const renderParentCategoryTab = ({ item }) => {
+  const renderParentCategoryTab = useCallback(({ item }) => {
+    if (!item) return null;
     const isActive = selectedCategoryId === item.id;
     return (
       <TouchableOpacity 
@@ -1142,7 +1146,7 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
         <Text style={[styles.parentTabText, isActive && styles.parentTabTextActive]}>{item.name}</Text>
       </TouchableOpacity>
     );
-  };
+  }, [selectedCategoryId, onCategorySelect]);
 
   // Graceful handling for loading state (for banners)
   if (!banners || banners.length === 0) {
@@ -1168,20 +1172,24 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
         activeDot={<View style={styles.activePaginationDot} />}
         key={banners.length}
       >
-        {banners.map((banner, index) => (
-          <View key={`${banner.id}-${index}`} style={styles.slide}>
-            <TouchableOpacity 
-              style={styles.bannerContainer} 
-              activeOpacity={0.9}
-              onPress={() => handleBannerPress(banner)}
-            >
-              <Image
-                source={{ uri: `https://newapi.earn24.in${banner.image_url}` }} 
-                style={styles.bannerImage}
-              />
-            </TouchableOpacity>
-          </View>
-        ))}
+        {banners.map((banner, index) => {
+          if (!banner) return null;
+          const bannerKey = banner.id !== undefined && banner.id !== null ? `${banner.id}-${index}` : index.toString();
+          return (
+            <View key={bannerKey} style={styles.slide}>
+              <TouchableOpacity 
+                style={styles.bannerContainer} 
+                activeOpacity={0.9}
+                onPress={() => handleBannerPress(banner)}
+              >
+                <Image
+                  source={{ uri: `https://newapi.earn24.in${banner.image_url}` }} 
+                  style={styles.bannerImage}
+                />
+              </TouchableOpacity>
+            </View>
+          );
+        })}
       </Swiper>
       
       {/* --- Categories Section with Parent and Sub-Categories --- */}
@@ -1192,7 +1200,7 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
         <FlatList
           data={categories}
           renderItem={renderParentCategoryTab}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item && item.id ? item.id.toString() : index.toString()}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.parentTabList}
@@ -1203,7 +1211,7 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
           <FlatList
             data={activeParentCategory.subCategories || []}
             renderItem={({ item }) => <SubCategoryItem item={item} navigation={navigation} />}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item, index) => item && item.id ? item.id.toString() : index.toString()}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.subCategoryList}
@@ -1296,4 +1304,8 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreenHeader;
+export default memo(HomeScreenHeader, (prevProps, nextProps) => {
+  return prevProps.selectedCategoryId === nextProps.selectedCategoryId &&
+         prevProps.banners === nextProps.banners &&
+         prevProps.categories === nextProps.categories;
+});

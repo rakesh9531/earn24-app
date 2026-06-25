@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ const mockAddToCart = (product, quantity) => {
 
 const ProductCard = ({ product, onPress }) => {
   const { addToCart } = useCart();
+  if (!product) return null;
   const imageUrl = product.main_image_url
     ? `https://newapi.earn24.in${product.main_image_url}` // IMPORTANT: Use your PC's IP
     : 'https://via.placeholder.com/150';
@@ -214,4 +215,16 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProductCard;
+export default memo(ProductCard, (prevProps, nextProps) => {
+  const prevP = prevProps.product;
+  const nextP = nextProps.product;
+  if (!prevP || !nextP) return false;
+  return prevP.offer_id === nextP.offer_id &&
+         prevP.id === nextP.id &&
+         prevP.selling_price === nextP.selling_price &&
+         prevP.mrp === nextP.mrp &&
+         prevP.bv_earned === nextP.bv_earned &&
+         prevP.minimum_order_quantity === nextP.minimum_order_quantity &&
+         prevP.main_image_url === nextP.main_image_url &&
+         prevP.name === nextP.name;
+});

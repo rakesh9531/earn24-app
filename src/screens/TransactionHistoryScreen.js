@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { mlmService } from '../services/mlmService';
+import { walletService } from '../services/walletService';
 // --- THIS IS THE CORRECTED IMPORT PATH BASED ON YOUR FILE STRUCTURE ---
 import ProfitItem from '../components/ProfitItem';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 import moment from 'moment';
 
@@ -28,6 +30,8 @@ const TransactionHistoryScreen = () => {
       let response;
       if (type === 'Profit') {
         response = await mlmService.getProfitHistory(page);
+      } else if (type === 'Wallet') {
+        response = await walletService.getWalletHistory(page);
       } else { // Assuming any other type is 'BV'
         response = await mlmService.getBvHistory(page);
       }
@@ -74,6 +78,28 @@ const TransactionHistoryScreen = () => {
   const renderItem = ({ item }) => {
     if (type === 'Profit') {
       return <ProfitItem item={item} />;
+    }
+
+    if (type === 'Wallet') {
+      const isCredit = item.txn_type === 'credit';
+      const iconName = isCredit ? 'arrow-up-circle' : 'arrow-down-circle';
+      const iconColor = isCredit ? '#28a745' : '#D32F2F';
+      const amountPrefix = isCredit ? '+' : '-';
+      const amount = Math.abs(parseFloat(item.amount || 0));
+
+      return (
+        <View style={styles.walletItemContainer}>
+          <Icon name={iconName} size={30} color={iconColor} style={styles.walletIcon} />
+          <View style={styles.walletDetailsContainer}>
+            <Text style={styles.walletRemarks}>{item.remarks || 'Wallet Adjustment'}</Text>
+            <Text style={styles.walletSource}>Source: {item.source ? item.source.replace(/_/g, ' ') : 'N/A'}</Text>
+            <Text style={styles.walletDate}>{moment(item.created_at).format('MMM D, YYYY, h:mm a')}</Text>
+          </View>
+          <Text style={[styles.walletAmount, { color: iconColor }]}>
+            {amountPrefix} ₹{amount.toFixed(2)}
+          </Text>
+        </View>
+      );
     }
 
     const isSelf = item.bv_type === 'SELF' || !item.bv_type;
@@ -202,6 +228,46 @@ const styles = StyleSheet.create({
     fontSize: 11, 
     color: '#A0AEC0', 
     textAlign: 'right',
+  },
+  walletItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  walletIcon: {
+    marginRight: 15,
+  },
+  walletDetailsContainer: {
+    flex: 1,
+  },
+  walletRemarks: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2D3748',
+    lineHeight: 20,
+  },
+  walletSource: {
+    fontSize: 11,
+    color: '#718096',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+  },
+  walletDate: {
+    fontSize: 11,
+    color: '#A0AEC0',
+    marginTop: 2,
+  },
+  walletAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

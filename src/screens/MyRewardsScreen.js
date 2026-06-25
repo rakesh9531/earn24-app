@@ -15,12 +15,14 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { rewardService } from '../services/rewardService';
+import { kycService } from '../services/kycService';
 
 const MyRewardsScreen = ({ navigation }) => {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [kycStatus, setKycStatus] = useState('NOT_SUBMITTED');
 
   // Claim Form Modal state
   const [activeReward, setActiveReward] = useState(null);
@@ -40,6 +42,16 @@ const MyRewardsScreen = ({ navigation }) => {
         setData(res.data);
       } else {
         setError('Failed to fetch rewards details.');
+      }
+
+      // Fetch KYC Status dynamically
+      try {
+        const kycRes = await kycService.getMyKycStatus();
+        if (kycRes && kycRes.status) {
+          setKycStatus(kycRes.data?.status || 'NOT_SUBMITTED');
+        }
+      } catch (kycErr) {
+        console.error('Failed to fetch KYC status:', kycErr);
       }
     } catch (err) {
       setError(err.message || 'An error occurred loading rewards.');
@@ -61,8 +73,24 @@ const MyRewardsScreen = ({ navigation }) => {
   }, []);
 
   const handleOpenClaim = (reward) => {
+    const isMonthlyFund = [
+      'BIKE_FUND', 'CAR_FUND', 'HOUSE_FUND', 'LEADERSHIP_FUND', 'TRAVEL_FUND', 'RELIEF_FUND'
+    ].includes(reward.type);
+
+    if (isMonthlyFund && kycStatus !== 'APPROVED') {
+      Alert.alert(
+        'KYC Verification Required',
+        'Please complete and verify your KYC details (Aadhaar, PAN, and Bank details) first to claim cash rewards.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Verify KYC', onPress: () => navigation.navigate('KYCVerification') }
+        ]
+      );
+      return;
+    }
+
     setActiveReward(reward);
-    setUserDetails('');
+    setUserDetails(isMonthlyFund ? 'AUTO_FILLED_FROM_KYC' : '');
     setShowClaimModal(true);
   };
 
@@ -74,15 +102,20 @@ const MyRewardsScreen = ({ navigation }) => {
 
   const submitClaim = async () => {
     if (!activeReward) return;
-    if (!userDetails.trim()) {
-      Alert.alert('Required', 'Please fill in the claim details (e.g. Bank Account details, UPI, passenger info, or nominee info).');
+
+    const isMonthlyFund = [
+      'BIKE_FUND', 'CAR_FUND', 'HOUSE_FUND', 'LEADERSHIP_FUND', 'TRAVEL_FUND', 'RELIEF_FUND'
+    ].includes(activeReward.type);
+
+    if (!isMonthlyFund && !userDetails.trim()) {
+      Alert.alert('Required', 'Please fill in the claim details (e.g. Passenger info or nominee info).');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const parsedDetails = {
-        user_input: userDetails,
+        user_input: isMonthlyFund ? 'AUTO_FILLED_FROM_KYC' : userDetails,
         submitted_at: new Date().toISOString(),
         // Keep payout amount if it is a precalculated pool claim
         payout_amount: activeReward.userDetails?.payout_amount || undefined
@@ -347,22 +380,33 @@ const MyRewardsScreen = ({ navigation }) => {
                   <Text style={styles.modalPayout}>Payout Amount: ₹{activeReward.userDetails.payout_amount.toFixed(2)}</Text>
                 )}
 
-                <Text style={styles.inputLabel}>
-                  {['DOMESTIC_TOUR', 'INTERNATIONAL_TOUR'].includes(activeReward?.type)
-                    ? 'Enter Passenger details (Name, Age, Passport No., Mobile)'
-                    : ['INSURANCE_HEALTH', 'INSURANCE_TERM'].includes(activeReward?.type)
-                    ? 'Enter Nominee details (Name, Relation, Age, Nominee PAN)'
-                    : 'Enter Bank Payout info (Bank Name, A/C No., IFSC Code, UPI ID)'}
-                </Text>
+                {activeReward && [
+                  'BIKE_FUND', 'CAR_FUND', 'HOUSE_FUND', 'LEADERSHIP_FUND', 'TRAVEL_FUND', 'RELIEF_FUND'
+                ].includes(activeReward.type) ? (
+                  <View style={styles.kycSummaryBox}>
+                    <Icon name="checkmark-circle-outline" size={24} color="#059669" style={{ alignSelf: 'center', marginBottom: 8 }} />
+                    <Text style={styles.kycSummaryText}>
+                      Your payout will be automatically sent to your registered bank account verified in your KYC profile. No manual entries are required.
+                    </Text>
+                  </View>
+                ) : (
+                  <View>
+                    <Text style={styles.inputLabel}>
+                      {['DOMESTIC_TOUR', 'INTERNATIONAL_TOUR'].includes(activeReward?.type)
+                        ? 'Enter Passenger details (Name, Age, Passport No., Mobile)'
+                        : 'Enter Nominee details (Name, Relation, Age, Nominee PAN)'}
+                    </Text>
 
-                <TextInput
-                  style={styles.textArea}
-                  multiline={true}
-                  numberOfLines={4}
-                  value={userDetails}
-                  onChangeText={setUserDetails}
-                  placeholder="Type your claim information here..."
-                />
+                    <TextInput
+                      style={styles.textArea}
+                      multiline={true}
+                      numberOfLines={4}
+                      value={userDetails}
+                      onChangeText={setUserDetails}
+                      placeholder="Type your claim information here..."
+                    />
+                  </View>
+                )}
               </View>
 
               <View style={styles.modalFooter}>
@@ -471,7 +515,22 @@ const styles = StyleSheet.create({
   modalCancelBtn: { flex: 1, borderWidth: 1, borderColor: '#D1D5DB', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   modalCancelText: { color: '#4B5563', fontWeight: 'bold' },
   modalSubmitBtn: { flex: 1, backgroundColor: '#0CA201', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  modalSubmitText: { color: 'white', fontWeight: 'bold' }
+  modalSubmitText: { color: 'white', fontWeight: 'bold' },
+  kycSummaryBox: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 12,
+    alignItems: 'center'
+  },
+  kycSummaryText: {
+    color: '#065F46',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20
+  }
 });
 
 export default MyRewardsScreen;

@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput,
-  Alert, ActivityIndicator, Keyboard
+  ActivityIndicator, Keyboard
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import { useAlert } from '../components/CustomAlert';
 
 const OtpVerificationScreen = ({ navigation, route }) => {
-  const { mobileNumber, flow } = route.params; // flow = 'REGISTER'
+  const { mobileNumber, flow } = route.params;
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Resend Timer Logic
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
   const { login } = useContext(AuthContext);
+  const { showAlert, AlertModal } = useAlert();
 
   useEffect(() => {
     let interval;
@@ -28,7 +28,7 @@ const OtpVerificationScreen = ({ navigation, route }) => {
 
   const handleVerify = async () => {
     if (otp.length !== 6) {
-      Alert.alert("Error", "Please enter a valid 6-digit OTP.");
+      showAlert('error', 'Invalid OTP', 'Please enter a valid 6-digit OTP.');
       return;
     }
     
@@ -40,18 +40,15 @@ const OtpVerificationScreen = ({ navigation, route }) => {
         const response = await authService.registerVerify({ mobile_number: mobileNumber, otp });
         
         if (response.status === true) {
-          // Success: Login the user immediately
           await login(response.data.user, response.data.token);
-          
-          Alert.alert("Success", "Account created successfully!");
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'AppTabs' }],
+          showAlert('success', 'Welcome! 🎉', 'Your account has been created successfully.', {
+            confirmText: 'Start Earning',
+            onConfirm: () => navigation.reset({ index: 0, routes: [{ name: 'AppTabs' }] }),
           });
         }
       } 
     } catch (error) {
-      Alert.alert("Verification Failed", error.message || "Invalid OTP");
+      showAlert('error', 'Verification Failed', error.message || 'Invalid OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -66,9 +63,9 @@ const OtpVerificationScreen = ({ navigation, route }) => {
 
     try {
       await authService.resendOtp({ mobile_number: mobileNumber });
-      Alert.alert("Sent", "OTP has been resent to your mobile.");
+      showAlert('success', 'OTP Sent! 📱', 'A new OTP has been sent to your mobile number.');
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to resend OTP");
+      showAlert('error', 'Resend Failed', error.message || 'Failed to resend OTP. Please try again.');
       setCanResend(true);
     }
   };
@@ -111,6 +108,7 @@ const OtpVerificationScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </View>
+      <AlertModal />
     </SafeAreaView>
   );
 };
