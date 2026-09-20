@@ -13,6 +13,7 @@ import {
   Dimensions,
   Modal,
   Share,
+  PanResponder,
 } from 'react-native';
 import RenderHtml from 'react-native-render-html'; 
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -132,6 +133,136 @@ const AccordionSection = ({ title, children, defaultOpen = true }) => {
         />
       </TouchableOpacity>
       {isOpen && <View style={styles.accordionContentInner}>{children}</View>}
+    </View>
+  );
+};
+
+// --- PINCH TO ZOOM IMAGE VIEWER (ANDROID & IOS COMPATIBLE) ---
+const PinchZoomImage = ({ uri, onDismiss }) => {
+  const [scale, setScale] = useState(1);
+  const scaleRef = React.useRef(1);
+  const [translateX, setTranslateX] = useState(0);
+  const [translateY, setTranslateY] = useState(0);
+  const transRef = React.useRef({ x: 0, y: 0 });
+
+  const initialDistanceRef = React.useRef(null);
+  const initialScaleRef = React.useRef(1);
+  const lastTouchRef = React.useRef({ x: 0, y: 0 });
+  const lastTapRef = React.useRef(0);
+
+  const getDistance = (touches) => {
+    const dx = touches[0].pageX - touches[1].pageX;
+    const dy = touches[0].pageY - touches[1].pageY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        const { touches } = evt.nativeEvent;
+        if (touches.length === 2) {
+          initialDistanceRef.current = getDistance(touches);
+          initialScaleRef.current = scaleRef.current;
+        } else if (touches.length === 1) {
+          lastTouchRef.current = { x: touches[0].pageX, y: touches[0].pageY };
+          
+          const now = Date.now();
+          if (now - lastTapRef.current < 320) {
+            // Double-tap zoom toggle
+            if (scaleRef.current > 1.2) {
+              scaleRef.current = 1;
+              transRef.current = { x: 0, y: 0 };
+            } else {
+              scaleRef.current = 2.5;
+            }
+            setScale(scaleRef.current);
+            setTranslateX(transRef.current.x);
+            setTranslateY(transRef.current.y);
+            lastTapRef.current = 0;
+            return;
+          }
+          lastTapRef.current = now;
+        }
+      },
+      onPanResponderMove: (evt) => {
+        const { touches } = evt.nativeEvent;
+        if (touches.length === 2) {
+          const distance = getDistance(touches);
+          if (initialDistanceRef.current) {
+            const factor = distance / initialDistanceRef.current;
+            let newScale = initialScaleRef.current * factor;
+            newScale = Math.max(1, Math.min(newScale, 5.0));
+            scaleRef.current = newScale;
+            setScale(newScale);
+            if (newScale <= 1.05) {
+              transRef.current = { x: 0, y: 0 };
+              setTranslateX(0);
+              setTranslateY(0);
+            }
+          }
+        } else if (touches.length === 1 && scaleRef.current > 1.05) {
+          const dx = touches[0].pageX - lastTouchRef.current.x;
+          const dy = touches[0].pageY - lastTouchRef.current.y;
+          lastTouchRef.current = { x: touches[0].pageX, y: touches[0].pageY };
+
+          const maxTranslate = (SCREEN_WIDTH * (scaleRef.current - 1)) / 1.5;
+          const newX = Math.max(-maxTranslate, Math.min(maxTranslate, transRef.current.x + dx));
+          const newY = Math.max(-maxTranslate, Math.min(maxTranslate, transRef.current.y + dy));
+          transRef.current = { x: newX, y: newY };
+          setTranslateX(newX);
+          setTranslateY(newY);
+        }
+      },
+      onPanResponderRelease: () => {
+        initialDistanceRef.current = null;
+        if (scaleRef.current < 1.1) {
+          scaleRef.current = 1;
+          transRef.current = { x: 0, y: 0 };
+          setScale(1);
+          setTranslateX(0);
+          setTranslateY(0);
+        }
+      }
+    })
+  ).current;
+
+  return (
+    <View style={styles.zoomModalBackdrop}>
+      <View style={{ position: 'absolute', top: 40, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 999 }}>
+        <View style={{ backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>
+            {scale > 1.1 ? `${scale.toFixed(1)}x Zoom • Double-Tap to Reset` : 'Pinch or Double-Tap to Zoom'}
+          </Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.zoomCloseBtn} 
+          onPress={onDismiss}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <Icon name="close-circle" size={36} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+
+      <View 
+        {...panResponder.panHandlers}
+        style={{ width: SCREEN_WIDTH, height: '100%', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}
+      >
+        <Image 
+          source={{ uri }} 
+          style={{ 
+            width: SCREEN_WIDTH, 
+            height: SCREEN_WIDTH * 1.2,
+            transform: [
+              { scale: scale },
+              { translateX: translateX },
+              { translateY: translateY }
+            ]
+          }} 
+          resizeMode="contain" 
+        />
+      </View>
     </View>
   );
 };
@@ -625,24 +756,6 @@ const ProductDetailsScreen = () => {
             const hasReturn = (rawReturn === 1 || rawReturn === true || rawReturn === '1' || rawReturn === 'true');
             const hasReplacement = (rawReplacement === 1 || rawReplacement === true || rawReplacement === '1' || rawReplacement === 'true');
 
-            let policyDisplay = 'Non-Returnable Product 🛡️';
-            let policyIcon = 'alert-circle-outline';
-            let policyColor = '#64748B';
-
-            if (hasReturn && hasReplacement) {
-              policyDisplay = `${returnDays}-Day Return & Replacement Policy Available 🛡️`;
-              policyIcon = 'shield-checkmark-outline';
-              policyColor = '#0CA201';
-            } else if (hasReplacement && !hasReturn) {
-              policyDisplay = `${replacementDays}-Day Replacement Policy Available (No Refund) 🛡️`;
-              policyIcon = 'sync-outline';
-              policyColor = '#0284C7';
-            } else if (hasReturn && !hasReplacement) {
-              policyDisplay = `${returnDays}-Day Return Policy Available 🛡️`;
-              policyIcon = 'shield-checkmark-outline';
-              policyColor = '#0CA201';
-            }
-
             return (
               <View style={styles.trustCard}>
                 <View style={styles.trustRow}>
@@ -651,10 +764,30 @@ const ProductDetailsScreen = () => {
                     Sold by: <Text style={styles.sellerName}>{product.seller_name || product.merchant_business_name || 'Earn24 Official'}</Text>
                   </Text>
                 </View>
+
+                {/* Return Policy Row */}
                 <View style={styles.trustRow}>
-                  <Icon name={policyIcon} size={18} color={policyColor} style={{ marginRight: 8 }} />
-                  <Text style={[styles.policyText, { color: policyColor }]}>
-                    {policyDisplay}
+                  <Icon 
+                    name={hasReturn ? "shield-checkmark-outline" : "close-circle"} 
+                    size={18} 
+                    color={hasReturn ? "#0CA201" : "#EF4444"} 
+                    style={{ marginRight: 8 }} 
+                  />
+                  <Text style={[styles.policyText, { color: hasReturn ? "#0CA201" : "#EF4444", fontWeight: hasReturn ? '600' : '700' }]}>
+                    {hasReturn ? `${returnDays}-Day Return Policy Available 🛡️` : `Return Not Available`}
+                  </Text>
+                </View>
+
+                {/* Replacement Policy Row */}
+                <View style={styles.trustRow}>
+                  <Icon 
+                    name={hasReplacement ? "sync-outline" : "close-circle"} 
+                    size={18} 
+                    color={hasReplacement ? "#0284C7" : "#EF4444"} 
+                    style={{ marginRight: 8 }} 
+                  />
+                  <Text style={[styles.policyText, { color: hasReplacement ? "#0284C7" : "#EF4444", fontWeight: hasReplacement ? '600' : '700' }]}>
+                    {hasReplacement ? `${replacementDays}-Day Replacement Policy Available 🛡️` : `Replacement Not Available`}
                   </Text>
                 </View>
               </View>
@@ -950,36 +1083,17 @@ const ProductDetailsScreen = () => {
         onDismiss={() => setIsPincodeModalVisible(false)} 
       />
 
-      {/* Full-Screen Image Zoom Modal */}
+      {/* Full-Screen Image Zoom Modal (Supports Two-Finger Pinch-to-Zoom & Double Tap) */}
       <Modal 
         visible={isZoomVisible} 
         transparent={true} 
         animationType="fade"
         onRequestClose={() => setIsZoomVisible(false)}
       >
-        <View style={styles.zoomModalBackdrop}>
-          <TouchableOpacity 
-            style={styles.zoomCloseBtn} 
-            onPress={() => setIsZoomVisible(false)}
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-          >
-            <Icon name="close-circle" size={36} color="#FFFFFF" />
-          </TouchableOpacity>
-          <ScrollView 
-            maximumZoomScale={4.0} 
-            minimumZoomScale={1.0} 
-            contentContainerStyle={styles.zoomScrollContainer}
-            showsHorizontalScrollIndicator={false}
-            showsVerticalScrollIndicator={false}
-            bouncesZoom={true}
-          >
-            <Image 
-              source={{ uri: zoomImageUrl }} 
-              style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 1.2 }} 
-              resizeMode="contain" 
-            />
-          </ScrollView>
-        </View>
+        <PinchZoomImage 
+          uri={zoomImageUrl} 
+          onDismiss={() => setIsZoomVisible(false)} 
+        />
       </Modal>
 
       {/* --- FULL-SCREEN CUSTOMER REVIEW MEDIA LIGHTBOX MODAL --- */}

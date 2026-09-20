@@ -660,6 +660,22 @@ const OrderDetailsScreen = () => {
                                 </View>
                             )}
 
+                            {/* Rejection Details Callout */}
+                            {retStatus === 'REJECTED' && (
+                                <View style={[styles.refundSettledBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+                                    <Icon name="close-circle" size={24} color="#DC2626" />
+                                    <View style={{ marginLeft: 10, flex: 1 }}>
+                                        <Text style={[styles.refundSettledTitle, { color: '#991B1B' }]}>
+                                            {isRep ? 'Replacement Request Rejected' : 'Return Request Rejected'}
+                                        </Text>
+                                        <Text style={[styles.refundSettledSub, { color: '#B91C1C', marginTop: 4, lineHeight: 18 }]}>
+                                            <Text style={{ fontWeight: '700' }}>Reason: </Text>
+                                            {retItem.reject_reason || retItem.admin_remarks || retItem.rejection_reason || retItem.merchant_notes || 'Request was not approved by seller/admin.'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+
                             {/* Clickable "See All Status" Action Bar */}
                             <TouchableOpacity 
                                 style={styles.seeStatusActionRow}
@@ -816,11 +832,13 @@ const OrderDetailsScreen = () => {
                     const eligibleItems = (order.items || []).filter(it => {
                         if (it.itemStatus === 'CANCELLED') return false;
                         const hasActive = activeReturns.some(r => r.order_item_id == it.id && !['REJECTED', 'CLOSED'].includes(r.status));
-                        return !hasActive;
+                        if (hasActive) return false;
+                        const canRet = it.has_return_policy === 1 || it.has_return_policy === '1' || it.has_return_policy === true;
+                        const canRep = it.is_replacement_available === 1 || it.is_replacement_available === '1' || it.is_replacement_available === true;
+                        return canRet || canRep;
                     });
                     const hasEligibleItems = eligibleItems.length > 0;
                     const returnWindowDays = order.returnWindowDays || 7;
-                    const isReturnable = order.isReturnable !== false;
                     const deliveryDate = order.deliveredAt || order.updatedAt || order.createdAt;
                     const daysSinceDelivery = moment().diff(moment(deliveryDate), 'days');
                     const isWithinWindow = daysSinceDelivery <= returnWindowDays;
@@ -835,12 +853,15 @@ const OrderDetailsScreen = () => {
                                 <Text style={styles.invoiceButtonText}>Download Invoice (PDF)</Text>
                             </TouchableOpacity>
 
-                            {hasEligibleItems && isReturnable && isWithinWindow && (
+                            {hasEligibleItems && isWithinWindow && (
                                 <TouchableOpacity 
                                     style={[styles.invoiceButton, { backgroundColor: '#FF9800', marginTop: 10 }]} 
                                     onPress={() => {
-                                        setSelectedOrderItemId(eligibleItems[0]?.id || null);
+                                        const firstItem = eligibleItems[0];
+                                        const canRet = firstItem ? (firstItem.has_return_policy === 1 || firstItem.has_return_policy === '1' || firstItem.has_return_policy === true) : true;
+                                        setSelectedOrderItemId(firstItem?.id || null);
                                         setReturnQuantity(1);
+                                        setRequestType(canRet ? 'RETURN' : 'REPLACEMENT');
                                         setIsReturnModalVisible(true);
                                     }}
                                 >
@@ -896,21 +917,31 @@ const OrderDetailsScreen = () => {
                                     <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 6 }}>Select Item to Return/Replace:</Text>
                                     {order.items.filter(i => i.itemStatus !== 'CANCELLED').map((item) => {
                                         const hasActive = activeReturns.some(r => r.order_item_id == item.id && !['REJECTED', 'CLOSED'].includes(r.status));
+                                        const itemCanRet = item.has_return_policy === 1 || item.has_return_policy === '1' || item.has_return_policy === true;
+                                        const itemCanRep = item.is_replacement_available === 1 || item.is_replacement_available === '1' || item.is_replacement_available === true;
+                                        const isNonReturnable = !itemCanRet && !itemCanRep;
                                         const isSelected = selectedOrderItemId === item.id || (!selectedOrderItemId && eligibleItems[0]?.id === item.id);
                                         return (
                                             <TouchableOpacity 
                                                 key={item.id}
-                                                disabled={hasActive}
-                                                style={[{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', marginBottom: 6 }, isSelected && { borderColor: '#0CA201', backgroundColor: '#F0FDF4' }, hasActive && { opacity: 0.55, backgroundColor: '#F1F5F9' }]}
+                                                disabled={hasActive || isNonReturnable}
+                                                style={[{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', marginBottom: 6 }, isSelected && { borderColor: '#0CA201', backgroundColor: '#F0FDF4' }, (hasActive || isNonReturnable) && { opacity: 0.55, backgroundColor: '#F1F5F9' }]}
                                                 onPress={() => {
                                                     setSelectedOrderItemId(item.id);
                                                     setReturnQuantity(1);
+                                                    if (!itemCanRet && itemCanRep) {
+                                                        setRequestType('REPLACEMENT');
+                                                    } else if (itemCanRet && !itemCanRep) {
+                                                        setRequestType('RETURN');
+                                                    }
                                                 }}
                                             >
-                                                <Icon name={hasActive ? "close-circle" : (isSelected ? "checkmark-circle" : "ellipse-outline")} size={20} color={hasActive ? "#94A3B8" : (isSelected ? "#0CA201" : "#64748B")} />
+                                                <Icon name={hasActive ? "close-circle" : isNonReturnable ? "ban-outline" : (isSelected ? "checkmark-circle" : "ellipse-outline")} size={20} color={hasActive ? "#94A3B8" : isNonReturnable ? "#EF4444" : (isSelected ? "#0CA201" : "#64748B")} />
                                                 <View style={{ marginLeft: 8, flex: 1 }}>
                                                     <Text style={{ fontSize: 13, color: '#1E293B' }} numberOfLines={1}>{item.productName}</Text>
                                                     {hasActive && <Text style={{ fontSize: 10, color: '#EA580C', fontWeight: '700' }}>Request in progress</Text>}
+                                                    {isNonReturnable && <Text style={{ fontSize: 10, color: '#EF4444', fontWeight: '700' }}>Non-Returnable Item</Text>}
+                                                    {!isNonReturnable && !itemCanRet && itemCanRep && <Text style={{ fontSize: 10, color: '#2563EB', fontWeight: '700' }}>Replacement Only</Text>}
                                                 </View>
                                                 <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B' }}>₹{parseFloat(item.totalPrice || 0).toFixed(2)}</Text>
                                             </TouchableOpacity>
@@ -959,21 +990,56 @@ const OrderDetailsScreen = () => {
                             );
                         })()}
 
-                        {/* Request Type Selector */}
-                        <View style={{ flexDirection: 'row', gap: 10, marginVertical: 12, width: '100%' }}>
-                            <TouchableOpacity 
-                                style={[{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', alignItems: 'center' }, requestType === 'RETURN' && { borderColor: '#0CA201', backgroundColor: '#F0FDF4' }]}
-                                onPress={() => setRequestType('RETURN')}
-                            >
-                                <Text style={[{ fontWeight: '600', color: '#64748B' }, requestType === 'RETURN' && { color: '#0CA201', fontWeight: '700' }]}>↩️ Refund</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={[{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', alignItems: 'center' }, requestType === 'REPLACEMENT' && { borderColor: '#0CA201', backgroundColor: '#F0FDF4' }]}
-                                onPress={() => setRequestType('REPLACEMENT')}
-                            >
-                                <Text style={[{ fontWeight: '600', color: '#64748B' }, requestType === 'REPLACEMENT' && { color: '#0CA201', fontWeight: '700' }]}>🔄 Replace</Text>
-                            </TouchableOpacity>
-                        </View>
+                        {/* Request Type Selector with Policy Enforcement */}
+                        {(() => {
+                            const activeReturns = (order?.return_requests || (order?.return_request ? [order.return_request] : []));
+                            const eligibleItems = (order?.items || []).filter(it => {
+                                if (it.itemStatus === 'CANCELLED') return false;
+                                return !activeReturns.some(r => r.order_item_id == it.id && !['REJECTED', 'CLOSED'].includes(r.status));
+                            });
+                            const currentTargetItem = (order?.items || []).find(i => i.id === (selectedOrderItemId || eligibleItems[0]?.id)) || order?.items?.[0];
+                            const canRet = currentTargetItem ? (currentTargetItem.has_return_policy === 1 || currentTargetItem.has_return_policy === '1' || currentTargetItem.has_return_policy === true) : true;
+                            const canRep = currentTargetItem ? (currentTargetItem.is_replacement_available === 1 || currentTargetItem.is_replacement_available === '1' || currentTargetItem.is_replacement_available === true) : true;
+
+                            return (
+                                <View style={{ width: '100%', marginVertical: 10 }}>
+                                    {!canRet && canRep && (
+                                        <View style={{ backgroundColor: '#EFF6FF', padding: 10, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#BFDBFE', flexDirection: 'row', alignItems: 'center' }}>
+                                            <Icon name="information-circle" size={18} color="#2563EB" style={{ marginRight: 6 }} />
+                                            <Text style={{ fontSize: 12, color: '#1E40AF', fontWeight: '600', flex: 1 }}>
+                                                This product is eligible for Replacement only (Non-Refundable).
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {canRet && !canRep && (
+                                        <View style={{ backgroundColor: '#F0FDF4', padding: 10, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#BBF7D0', flexDirection: 'row', alignItems: 'center' }}>
+                                            <Icon name="information-circle" size={18} color="#16A34A" style={{ marginRight: 6 }} />
+                                            <Text style={{ fontSize: 12, color: '#15803D', fontWeight: '600', flex: 1 }}>
+                                                This product is eligible for Return & Refund only.
+                                            </Text>
+                                        </View>
+                                    )}
+                                    <View style={{ flexDirection: 'row', gap: 10, width: '100%' }}>
+                                        {canRet && (
+                                            <TouchableOpacity 
+                                                style={[{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', alignItems: 'center' }, requestType === 'RETURN' && { borderColor: '#0CA201', backgroundColor: '#F0FDF4' }]}
+                                                onPress={() => setRequestType('RETURN')}
+                                            >
+                                                <Text style={[{ fontWeight: '600', color: '#64748B' }, requestType === 'RETURN' && { color: '#0CA201', fontWeight: '700' }]}>↩️ Refund</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                        {canRep && (
+                                            <TouchableOpacity 
+                                                style={[{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: '#CBD5E1', alignItems: 'center' }, requestType === 'REPLACEMENT' && { borderColor: '#0CA201', backgroundColor: '#F0FDF4' }]}
+                                                onPress={() => setRequestType('REPLACEMENT')}
+                                            >
+                                                <Text style={[{ fontWeight: '600', color: '#64748B' }, requestType === 'REPLACEMENT' && { color: '#0CA201', fontWeight: '700' }]}>🔄 Replace</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                </View>
+                            );
+                        })()}
 
                         {/* If RETURN: 100% Refund to Earn24 Wallet */}
                         {requestType === 'RETURN' && (
