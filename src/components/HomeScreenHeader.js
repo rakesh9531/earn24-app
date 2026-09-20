@@ -1087,6 +1087,10 @@
 import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
 import Swiper from 'react-native-swiper';
+import HomeSearchBar from './HomeSearchBar';
+import RecentlyViewedSection from './RecentlyViewedSection';
+import BuyAgainSection from './BuyAgainSection';
+import HighBvDealsSection from './HighBvDealsSection';
 
 // --- DESIGN SYSTEM CONSTANTS ---
 const COLORS = {
@@ -1129,7 +1133,16 @@ const SubCategoryItem = memo(({ item, navigation }) => {
 });
 
 // --- The Main Header Component, now controlled by HomeScreen ---
-const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId, onCategorySelect }) => {
+const HomeScreenHeader = ({
+  banners,
+  categories,
+  navigation,
+  selectedCategoryId,
+  onCategorySelect,
+  productSections,
+  topBvDeals,
+  refreshKey,
+}) => {
 
   const handleBannerPress = (banner) => {
     Alert.alert("Banner Tapped", `You tapped on banner: ${banner.title || 'Untitled'}`);
@@ -1148,51 +1161,60 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
     );
   }, [selectedCategoryId, onCategorySelect]);
 
-  // Graceful handling for loading state (for banners)
-  if (!banners || banners.length === 0) {
-    return (
-      <View style={[styles.slide, { paddingTop: 10, paddingBottom: 10 }]}>
-        <View style={[styles.bannerContainer, styles.skeletonBanner]} />
-      </View>
-    );
-  }
-
   // FIND the active category object based on the ID received from the parent
   const activeParentCategory = categories?.find(cat => cat.id === selectedCategoryId);
 
   return (
-    <View>
-      {/* Banners Carousel (Unchanged) */}
-      <Swiper
-        style={styles.swiper}
-        autoplay
-        autoplayTimeout={4}
-        showsPagination
-        dot={<View style={styles.paginationDot} />}
-        activeDot={<View style={styles.activePaginationDot} />}
-        key={banners.length}
-      >
-        {banners.map((banner, index) => {
-          if (!banner) return null;
-          const bannerKey = banner.id !== undefined && banner.id !== null ? `${banner.id}-${index}` : index.toString();
-          return (
-            <View key={bannerKey} style={styles.slide}>
-              <TouchableOpacity
-                style={styles.bannerContainer}
-                activeOpacity={0.9}
-                onPress={() => handleBannerPress(banner)}
-              >
-                <Image
-                  source={{ uri: `https://newapi.earn24.in${banner.image_url}` }}
-                  style={styles.bannerImage}
-                />
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-      </Swiper>
+    <View style={{ backgroundColor: '#FFFFFF' }}>
+      {/* --- 1. FLIPKART-STYLE TOP SEARCH BAR --- */}
+      <HomeSearchBar navigation={navigation} />
 
-      {/* --- Categories Section with Parent and Sub-Categories --- */}
+      {/* --- 2. BANNERS CAROUSEL --- */}
+      {(!banners || banners.length === 0) ? (
+        <View style={[styles.slide, { paddingTop: 10, paddingBottom: 10 }]}>
+          <View style={[styles.bannerContainer, styles.skeletonBanner]} />
+        </View>
+      ) : (
+        <Swiper
+          style={styles.swiper}
+          autoplay
+          autoplayTimeout={4}
+          showsPagination
+          dot={<View style={styles.paginationDot} />}
+          activeDot={<View style={styles.activePaginationDot} />}
+          key={banners.length}
+        >
+          {banners.map((banner, index) => {
+            if (!banner) return null;
+            const bannerKey = banner.id !== undefined && banner.id !== null ? `${banner.id}-${index}` : index.toString();
+            return (
+              <View key={bannerKey} style={styles.slide}>
+                <TouchableOpacity
+                  style={styles.bannerContainer}
+                  activeOpacity={0.9}
+                  onPress={() => handleBannerPress(banner)}
+                >
+                  <Image
+                    source={{ uri: `https://newapi.earn24.in${banner.image_url}` }}
+                    style={styles.bannerImage}
+                  />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </Swiper>
+      )}
+
+      {/* --- 3. HIGH BV & SUPER SAVER DEALS (Earn24 Core Highlight) --- */}
+      <HighBvDealsSection topBvDeals={topBvDeals} productSections={productSections} navigation={navigation} />
+
+      {/* --- 4. BUY AGAIN SECTION (Re-order Past Delivered Items) --- */}
+      <BuyAgainSection navigation={navigation} refreshKey={refreshKey} />
+
+      {/* --- 5. RECENTLY VIEWED SECTION (Smart Local Memory) --- */}
+      <RecentlyViewedSection navigation={navigation} refreshKey={refreshKey} />
+
+      {/* --- 6. CATEGORIES SECTION WITH PARENT AND SUB-CATEGORIES --- */}
       <View style={styles.categoriesSection}>
         <Text style={styles.sectionTitle}>Shop by Category</Text>
 
@@ -1307,5 +1329,8 @@ const styles = StyleSheet.create({
 export default memo(HomeScreenHeader, (prevProps, nextProps) => {
   return prevProps.selectedCategoryId === nextProps.selectedCategoryId &&
     prevProps.banners === nextProps.banners &&
-    prevProps.categories === nextProps.categories;
+    prevProps.categories === nextProps.categories &&
+    prevProps.productSections === nextProps.productSections &&
+    prevProps.topBvDeals === nextProps.topBvDeals &&
+    prevProps.refreshKey === nextProps.refreshKey;
 });

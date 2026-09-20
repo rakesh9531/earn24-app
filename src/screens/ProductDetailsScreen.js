@@ -31,6 +31,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getProductReviews } from '../services/reviewService';
 import { getProductById } from '../services/productService';
+import { recordProductView } from '../services/userAffinityService';
 import moment from 'moment';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -489,6 +490,7 @@ const ProductDetailsScreen = () => {
     };
 
     if (currentProductId) {
+      recordProductView({ ...product, id: currentProductId, product_id: currentProductId });
       fetchFullProduct();
       fetchRelated();
       fetchReviews();

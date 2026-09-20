@@ -737,6 +737,7 @@ import {
   View, Text, ActivityIndicator, RefreshControl, TouchableOpacity, Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { mlmService } from '../services/mlmService';
 import ProductCarousel from '../components/ProductCarousel';
 import FloatingCartBar from '../components/FloatingCartBar';
@@ -746,6 +747,7 @@ import { usePincode } from '../context/PincodeContext';
 import LocationHeader from '../components/LocationHeader';
 import HomeScreenHeader from '../components/HomeScreenHeader';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { getFavoriteCategoryId } from '../services/userAffinityService';
 
 const HomeScreen = ({ navigation }) => {
   const { pincode, isLoadingPincode } = usePincode();
@@ -773,6 +775,14 @@ const HomeScreen = ({ navigation }) => {
   const [homeData, setHomeData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Auto-refresh dynamic sections (Recently Viewed & Buy Again) when screen regains focus
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey(prev => prev + 1);
+    }, [])
+  );
 
   // --- STATE TO REMEMBER THE SELECTED CATEGORY ---
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -790,8 +800,11 @@ const HomeScreen = ({ navigation }) => {
       if (response && response.status) {
         setHomeData(response.data);
         if (response.data.categories && response.data.categories.length > 0) {
-          const defaultCatId = response.data.categories[0].id;
-          setSelectedCategoryId(defaultCatId);
+          // Check if user has a personalized favorite category
+          const favCatId = await getFavoriteCategoryId();
+          const hasFav = favCatId && response.data.categories.some(c => c.id === favCatId);
+          const initialCatId = hasFav ? favCatId : response.data.categories[0].id;
+          setSelectedCategoryId(initialCatId);
         }
       } else {
         setError(response.message || "Failed to load data.");
@@ -878,6 +891,9 @@ const HomeScreen = ({ navigation }) => {
                 navigation={navigation}
                 selectedCategoryId={selectedCategoryId}
                 onCategorySelect={handleCategorySelect}
+                productSections={homeData.productSections}
+                topBvDeals={homeData.topBvDeals}
+                refreshKey={refreshKey}
               />
             }
             showsVerticalScrollIndicator={false}
