@@ -77,13 +77,20 @@ const BuyAgainSection = ({ navigation, refreshKey }) => {
     }
 
     try {
+      // First try dedicated previously-purchased-items endpoint
+      const res = await orderService.getPreviouslyPurchasedItems(1, 15);
+      if (res && res.status && Array.isArray(res.data) && res.data.length > 0) {
+        setItems(res.data);
+        return;
+      }
+
+      // Fallback: Parse from order history
       const response = await orderService.getOrderHistory(1, 10);
       if (response && response.status && Array.isArray(response.data)) {
         const extracted = [];
         const seenKeys = new Set();
 
         for (const ord of response.data) {
-          // If order has detailed items array
           if (Array.isArray(ord.items) && ord.items.length > 0) {
             for (const it of ord.items) {
               const pid = it.productId || it.product_id || it.id;
@@ -103,7 +110,6 @@ const BuyAgainSection = ({ navigation, refreshKey }) => {
               }
             }
           } else if (ord.first_item_name) {
-            // Fallback from order card summary
             const key = ord.first_item_name;
             if (!seenKeys.has(key)) {
               seenKeys.add(key);
@@ -188,10 +194,10 @@ const BuyAgainSection = ({ navigation, refreshKey }) => {
           <Text style={styles.sectionTitle}>Buy Again</Text>
         </View>
         <TouchableOpacity
-          onPress={() => navigation.navigate('OrderHistory')}
+          onPress={() => navigation.navigate('CategoryProducts', { isBuyAgain: true, categoryName: 'Buy Again' })}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.seeAllText}>All Orders &gt;</Text>
+          <Text style={styles.seeAllText}>See all &gt;</Text>
         </TouchableOpacity>
       </View>
 

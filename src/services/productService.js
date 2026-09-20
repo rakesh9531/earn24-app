@@ -106,6 +106,18 @@ const checkPincode = async (pincode) => {
     }
 };
 
+const getTopBvDeals = async (pincode, page = 1, limit = 20) => {
+    try {
+        const response = await api.get('/inventory/top-bv-deals', {
+            params: { pincode, page, limit }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('API Error in getTopBvDeals:', error.response?.data || error.message);
+        return { status: false, data: [], message: error.response?.data?.message || 'Failed to fetch top BV deals.' };
+    }
+};
+
 export const productService = {
     search,
     getTrendingSearches,
@@ -113,5 +125,6 @@ export const productService = {
     getProductById,
     getProductsByCategory,
     getProductsBySubcategory,
-    checkPincode
+    checkPincode,
+    getTopBvDeals
 };

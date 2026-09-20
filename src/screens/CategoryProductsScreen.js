@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,18 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { usePincode } from '../context/PincodeContext';
 import { productService } from '../services/productService';
+import { orderService } from '../services/orderService';
 import ProductCard from '../components/ProductCard';
 import FloatingCartBar from '../components/FloatingCartBar';
 import CartIcon from '../components/CartIcon';
 
 const CategoryProductsScreen = ({ route, navigation }) => {
-  const { categoryId, categoryName, isSubcategory, isTopBv, dealsList } = route.params || {};
+  const { categoryId, categoryName, isSubcategory, isTopBv, dealsList, isBuyAgain } = route.params || {};
   const { pincode } = usePincode();
 
   const [products, setProducts] = useState(isTopBv && Array.isArray(dealsList) ? dealsList : []);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(!isTopBv);
+  const [isLoading, setIsLoading] = useState(!isTopBv || !dealsList || dealsList.length === 0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
@@ -29,22 +30,23 @@ const CategoryProductsScreen = ({ route, navigation }) => {
 
   // Set the screen title & Cart icon
   useEffect(() => {
+    let screenTitle = categoryName;
+    if (!screenTitle) {
+      if (isTopBv) screenTitle = 'Top BV & Super Deals';
+      else if (isBuyAgain) screenTitle = 'Buy Again';
+      else screenTitle = 'Products';
+    }
     navigation.setOptions({
-      title: categoryName || (isTopBv ? 'Top BV & Super Deals' : 'Products'),
+      title: screenTitle,
       headerRight: () => (
         <View style={{ marginRight: 15 }}>
           <CartIcon />
         </View>
       ),
     });
-  }, [navigation, categoryName, isTopBv]);
+  }, [navigation, categoryName, isTopBv, isBuyAgain]);
 
-  const fetchProducts = async (pageNum = 1) => {
-    if (isTopBv) {
-      setIsLoading(false);
-      return;
-    }
-
+  const fetchProducts = useCallback(async (pageNum = 1) => {
     const activePincode = pincode || '';
 
     if (pageNum === 1) {
@@ -56,40 +58,54 @@ const CategoryProductsScreen = ({ route, navigation }) => {
     setError('');
     try {
       let response;
-      if (isSubcategory) {
+      if (isTopBv) {
+        response = await productService.getTopBvDeals(activePincode, pageNum, 20);
+      } else if (isBuyAgain) {
+        response = await orderService.getPreviouslyPurchasedItems(pageNum, 20);
+      } else if (isSubcategory) {
         response = await productService.getProductsBySubcategory(categoryId, activePincode, pageNum);
       } else {
         response = await productService.getProductsByCategory(categoryId, activePincode, pageNum);
       }
 
       if (response && response.status) {
-        setProducts(prev => (pageNum === 1 ? response.data : [...prev, ...response.data]));
-        if (response.pagination) {
+        const newItems = response.data || [];
+        setProducts(prev => (pageNum === 1 ? newItems : [...prev, ...newItems]));
+        if (response.pagination && response.pagination.totalPages) {
           setTotalPages(response.pagination.totalPages);
+        } else if (newItems.length < 20) {
+          setTotalPages(pageNum);
+        } else {
+          setTotalPages(pageNum + 1);
         }
       } else {
-        setError(response.message || 'Could not load products.');
+        if (pageNum === 1 && products.length === 0) {
+          setError(response?.message || 'Could not load products.');
+        }
       }
     } catch (e) {
-      setError(e.message || 'An error occurred.');
+      if (pageNum === 1 && products.length === 0) {
+        setError(e.message || 'An error occurred.');
+      }
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  };
+  }, [categoryId, isSubcategory, isTopBv, isBuyAgain, pincode]);
 
   useEffect(() => {
-    if (!isTopBv && categoryId) {
-      setPage(1);
-      fetchProducts(1);
-    } else if (isTopBv && Array.isArray(dealsList)) {
+    setPage(1);
+    if (isTopBv && Array.isArray(dealsList) && dealsList.length > 0) {
       setProducts(dealsList);
       setIsLoading(false);
+      setTotalPages(dealsList.length >= 20 ? 5 : 1);
+    } else {
+      fetchProducts(1);
     }
-  }, [categoryId, pincode, isTopBv, dealsList]);
+  }, [categoryId, pincode, isTopBv, isBuyAgain]);
 
   const handleLoadMore = () => {
-    if (!isTopBv && !isLoadingMore && page < totalPages) {
+    if (!isLoadingMore && !isLoading && page < totalPages) {
       const nextPage = page + 1;
       setPage(nextPage);
       fetchProducts(nextPage);
@@ -103,9 +119,9 @@ const CategoryProductsScreen = ({ route, navigation }) => {
     }
     const q = searchQuery.toLowerCase().trim();
     return products.filter((p) => {
-      const nameMatch = p.name && p.name.toLowerCase().includes(q);
-      const brandMatch = p.brand_name && p.brand_name.toLowerCase().includes(q);
-      return nameMatch || brandMatch;
+      const pName = (p.name || p.product_name || '').toLowerCase();
+      const brandMatch = (p.brand_name || '').toLowerCase().includes(q);
+      return pName.includes(q) || brandMatch;
     });
   }, [products, searchQuery]);
 
@@ -145,7 +161,7 @@ const CategoryProductsScreen = ({ route, navigation }) => {
           <Icon name="search-outline" size={18} color="#059669" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder={`Search in ${categoryName || 'deals'}...`}
+            placeholder={`Search in ${categoryName || (isTopBv ? 'Top Deals' : (isBuyAgain ? 'Buy Again' : 'products'))}...`}
             placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}

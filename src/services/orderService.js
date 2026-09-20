@@ -107,6 +107,16 @@ const verifyPayUPayment = async (verifyData) => {
     }
 };
 
+const getPreviouslyPurchasedItems = async (page = 1, limit = 20) => {
+    try {
+        const response = await api.get('/orders/previously-purchased-items', { params: { page, limit } });
+        return response.data;
+    } catch (error) {
+        console.error('API Error in getPreviouslyPurchasedItems:', error.response?.data || error.message);
+        return { status: false, data: [], message: error.response?.data?.message || 'Failed to fetch purchased items.' };
+    }
+};
+
 export const orderService = {
     createOrder,
     getOrderHistory,
@@ -118,4 +128,5 @@ export const orderService = {
     requestReturn,
     initiatePayUPayment,
     verifyPayUPayment,
+    getPreviouslyPurchasedItems,
 };
