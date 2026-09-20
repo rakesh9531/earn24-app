@@ -271,6 +271,7 @@ const AddEditAddressScreen = () => {
           city: existingAddress?.city || '',
           state: existingAddress?.state || '',
           pincode: existingAddress?.pincode || '',
+          alternatePhone: existingAddress?.alternatePhone || existingAddress?.alternate_phone || '',
           addressType: existingAddress?.addressType || 'Home',
           isDefault: existingAddress?.isDefault || false,
         }}
@@ -349,6 +350,20 @@ const AddEditAddressScreen = () => {
                     value={values.pincode} 
                 />
                 {errors.pincode && touched.pincode && <Text style={styles.errorText}>{errors.pincode}</Text>}
+            </View>
+
+            <View style={styles.inputGroup}>
+                <Text style={styles.label}>Alternative Phone Number (Optional)</Text>
+                <TextInput 
+                    style={styles.input} 
+                    placeholder="e.g. 10-digit mobile number for delivery agent" 
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                    keyboardType="phone-pad" 
+                    maxLength={10} 
+                    onChangeText={handleChange('alternatePhone')} 
+                    onBlur={handleBlur('alternatePhone')} 
+                    value={values.alternatePhone} 
+                />
             </View>
 
              <View style={styles.inputGroup}>

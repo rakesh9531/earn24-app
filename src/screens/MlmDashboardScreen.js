@@ -20,6 +20,7 @@ const MlmDashboardScreen = ({ navigation }) => {
         // Ensure all numeric values from the API are converted to actual numbers
         const parsedData = {
           walletBalance: parseFloat(response.data.walletBalance || 0),
+          totalEarnedTillDate: parseFloat(response.data.totalEarnedTillDate || 0),
           totalBv: parseFloat(response.data.totalBv || 0),
           directReferrals: parseInt(response.data.directReferrals || 0, 10),
         };
@@ -67,6 +68,15 @@ const MlmDashboardScreen = ({ navigation }) => {
       contentContainerStyle={styles.contentContainer}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#0CA201"]} />}
     >
+      {/* TOTAL EARNED INCOME TILL DATE CARD */}
+      <View style={{ backgroundColor: '#059669', padding: 16, borderRadius: 14, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View>
+          <Text style={{ color: '#E6F4EA', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Earned Income (Till Date)</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '800', marginTop: 4 }}>₹{summary?.totalEarnedTillDate?.toFixed(2) || '0.00'}</Text>
+        </View>
+        <Icon name="cash-outline" size={36} color="#FFFFFF" />
+      </View>
+
       <View style={styles.summaryGrid}>
         <View style={[styles.summaryCard, { flex: 1.2 }]}>
           <Text style={styles.cardLabel}>Wallet Balance</Text>

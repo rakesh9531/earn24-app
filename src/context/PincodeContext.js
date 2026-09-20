@@ -10,18 +10,21 @@ const PincodeContext = createContext({
 const PINCODE_STORAGE_KEY = '@session_pincode';
 
 export const PincodeProvider = ({ children }) => {
-  const [pincode, setPincode] = useState(null);
+  const [pincode, setPincode] = useState('ALL');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         const storedPincode = await AsyncStorage.getItem(PINCODE_STORAGE_KEY);
-        if (storedPincode) {
-          setPincode(storedPincode);
+        if (storedPincode && storedPincode !== 'undefined' && storedPincode !== 'null' && storedPincode !== 'ALL' && storedPincode.trim().length > 0) {
+          setPincode(storedPincode.trim());
+        } else {
+          setPincode('ALL');
         }
       } catch (e) {
         console.error("PincodeContext: Failed to load pincode from storage.", e);
+        setPincode('ALL');
       } finally {
         setIsLoading(false);
       }
@@ -30,13 +33,17 @@ export const PincodeProvider = ({ children }) => {
   }, []);
 
   const updatePincode = useCallback(async (newPincode) => {
-    if (newPincode && typeof newPincode === 'string') {
-      try {
-        await AsyncStorage.setItem(PINCODE_STORAGE_KEY, newPincode);
-        setPincode(newPincode);
-      } catch (e) {
-        console.error("PincodeContext: Failed to save pincode to storage.", e);
+    try {
+      if (newPincode && newPincode !== 'ALL' && newPincode !== 'undefined' && newPincode !== 'null' && typeof newPincode === 'string' && newPincode.trim().length > 0) {
+        const clean = newPincode.trim();
+        await AsyncStorage.setItem(PINCODE_STORAGE_KEY, clean);
+        setPincode(clean);
+      } else {
+        await AsyncStorage.removeItem(PINCODE_STORAGE_KEY);
+        setPincode('ALL');
       }
+    } catch (e) {
+      console.error("PincodeContext: Failed to save pincode to storage.", e);
     }
   }, []);
 

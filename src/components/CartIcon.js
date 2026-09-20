@@ -61,19 +61,19 @@ import { useCart } from '../context/CartContext'; // Import the global cart hook
 
 const CartIcon = () => {
   const navigation = useNavigation();
-  
+
   // ==========================================================
   // === THE FIX IS HERE: Use 'totalPhysicalItems' instead   ====
   // ==========================================================
-  const { totalPhysicalItems } = useCart(); 
+  const { totalPhysicalItems } = useCart();
 
   return (
-    <TouchableOpacity 
-        style={styles.container} 
-        onPress={() => navigation.navigate('Cart')}
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => navigation.navigate('Cart')}
     >
       <Icon name="basket-outline" size={28} color="#1F2937" />
-      
+
       {/* This logic now correctly checks against totalPhysicalItems */}
       {totalPhysicalItems > 0 && (
         <View style={styles.badgeContainer}>

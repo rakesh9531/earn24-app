@@ -81,18 +81,43 @@ const TransactionHistoryScreen = () => {
     }
 
     if (type === 'Wallet') {
-      const isCredit = item.txn_type === 'credit';
+      const rawType = (item.txn_type || item.transaction_type || '').toString().toLowerCase();
+      const remarks = (item.remarks || '').toString();
+      const source = (item.source || '').toString().toLowerCase();
+
+      let isCredit = rawType === 'credit';
+      if (remarks.toLowerCase().includes('payment for order') || source.includes('order_purchase')) {
+        isCredit = false; // Payments are ALWAYS DEBIT (-)
+      } else if (remarks.toLowerCase().includes('refund') || remarks.toLowerCase().includes('cashback') || source.includes('refund')) {
+        isCredit = true; // Refunds and Cashbacks are ALWAYS CREDIT (+)
+      }
+
+      const isRefund = remarks.toLowerCase().includes('refund') || source.includes('refund');
+      const isPurchase = remarks.toLowerCase().includes('payment for order') || source.includes('order_purchase');
+
       const iconName = isCredit ? 'arrow-up-circle' : 'arrow-down-circle';
-      const iconColor = isCredit ? '#28a745' : '#D32F2F';
+      const iconColor = isCredit ? '#16A34A' : '#DC2626';
       const amountPrefix = isCredit ? '+' : '-';
       const amount = Math.abs(parseFloat(item.amount || 0));
 
       return (
         <View style={styles.walletItemContainer}>
-          <Icon name={iconName} size={30} color={iconColor} style={styles.walletIcon} />
+          <Icon name={iconName} size={32} color={iconColor} style={styles.walletIcon} />
           <View style={styles.walletDetailsContainer}>
-            <Text style={styles.walletRemarks}>{item.remarks || 'Wallet Adjustment'}</Text>
-            <Text style={styles.walletSource}>Source: {item.source ? item.source.replace(/_/g, ' ') : 'N/A'}</Text>
+            <Text style={styles.walletRemarks} numberOfLines={2}>{remarks || 'Wallet Adjustment'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
+              <View style={[
+                styles.sourceBadge, 
+                isRefund ? styles.sourceBadgeRefund : (isPurchase ? styles.sourceBadgePurchase : styles.sourceBadgeDefault)
+              ]}>
+                <Text style={[
+                  styles.sourceBadgeText,
+                  isRefund ? styles.sourceBadgeTextRefund : (isPurchase ? styles.sourceBadgeTextPurchase : styles.sourceBadgeTextDefault)
+                ]}>
+                  {isRefund ? 'RETURN REFUND' : (item.source ? item.source.replace(/_/g, ' ').toUpperCase() : 'WALLET')}
+                </Text>
+              </View>
+            </View>
             <Text style={styles.walletDate}>{moment(item.created_at).format('MMM D, YYYY, h:mm a')}</Text>
           </View>
           <Text style={[styles.walletAmount, { color: iconColor }]}>
@@ -268,6 +293,40 @@ const styles = StyleSheet.create({
   walletAmount: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  sourceBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 6,
+    marginBottom: 2,
+  },
+  sourceBadgeRefund: {
+    backgroundColor: '#DCFCE7',
+  },
+  sourceBadgeTextRefund: {
+    color: '#15803D',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  sourceBadgePurchase: {
+    backgroundColor: '#FEE2E2',
+  },
+  sourceBadgeTextPurchase: {
+    color: '#B91C1C',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  sourceBadgeDefault: {
+    backgroundColor: '#F1F5F9',
+  },
+  sourceBadgeTextDefault: {
+    color: '#475569',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
 

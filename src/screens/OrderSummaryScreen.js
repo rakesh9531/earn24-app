@@ -767,7 +767,10 @@ const OrderSummaryScreen = () => {
     finalCartItems.forEach(item => {
       st += parseFloat(item.selling_price) * item.quantity;
       bv += parseFloat(item.bv_earned || 0) * item.quantity;
-      ids.push(item.cart_item_id);
+      const itemId = item.cart_item_id || item.id;
+      if (itemId !== undefined && itemId !== null) {
+        ids.push(itemId);
+      }
     });
     return { subtotal: st, totalBvInCart: bv, cartItemIds: ids };
   }, [finalCartItems]);
@@ -810,54 +813,42 @@ const OrderSummaryScreen = () => {
 
     setIsLoading(true);
     try {
-      // Step A: Create the Order
-      // Your backend logic says: If method is WALLET, deduct balance NOW.
-      const payload = {
-        shippingAddressId: selectedAddress.id,
-        paymentMethod: paymentMethod,
-        cartItemIds: cartItemIds, // Pass the IDs of selected items
-      };
-
-      const orderRes = await orderService.createOrder(payload);
-      
-      if (!orderRes.status) {
-        throw new Error(orderRes.message || "Failed to create order.");
-      }
-
-      const orderData = orderRes.data;
-
-      // Step B: Route user based on Payment Method
       if (paymentMethod === 'ONLINE') {
-        const paymentPayload = { 
-            userId: user.id, name: user.fullName, email: user.email, 
-            mobile: user.mobileNumber, amount: totalAmount, orderId: orderData.orderId 
-        };
-        const paymentRes = await paymentService.initiatePayment(paymentPayload);
-        
-        if (paymentRes.gateway?.toLowerCase() === 'payu') {
-          const payUHtml = generatePayUForm(paymentRes.payu_url, paymentRes.params);
-          setIsLoading(false); 
-          navigation.navigate('PaymentWebView', { 
-              htmlContent: payUHtml, 
-              orderData: orderData, 
-              successTarget: 'OrderSuccess',
-              cartItemIds: cartItemIds // <-- ADD THIS
+        // For ONLINE (PayU), call initiatePayUPayment directly (it handles pending order creation)
+        const payuRes = await orderService.initiatePayUPayment({
+          shippingAddressId: selectedAddress.id,
+          cartItemIds: cartItemIds,
+        });
+
+        setIsLoading(false);
+        if (payuRes.status && payuRes.data) {
+          navigation.navigate('PayU', {
+            payuData: payuRes.data
           });
         } else {
-          throw new Error(`Gateway configuration error.`);
+          throw new Error(payuRes.message || 'Failed to initiate PayU payment.');
         }
       } 
       else {
-        // This covers both WALLET and COD
-        // Since backend already handled the logic, we just show success
+        // For COD and WALLET, create the order directly
+        const payload = {
+          shippingAddressId: selectedAddress.id,
+          paymentMethod: paymentMethod,
+          cartItemIds: cartItemIds,
+        };
+
+        const orderRes = await orderService.createOrder(payload);
         
+        if (!orderRes.status) {
+          throw new Error(orderRes.message || "Failed to create order.");
+        }
+
+        const orderData = orderRes.data;
+
         // 1. Remove ONLY ordered items from local state
         removeOrderedItems(cartItemIds);
-        
-        // 2. Refresh cart in background to stay in sync with server
-        // (removeOrderedItems is already optimistic, fetchCart will confirm)
 
-        // 3. Navigate to Success
+        // 2. Navigate to Success
         navigation.reset({
           index: 1,
           routes: [
@@ -867,7 +858,6 @@ const OrderSummaryScreen = () => {
               params: { 
                 order: {
                   ...orderData,
-                  // Ensure we use values from backend response
                   delivery_fee: orderData.delivery_fee ?? deliveryFee,
                   total_amount: orderData.total_amount ?? totalAmount
                 } 
@@ -893,7 +883,7 @@ const OrderSummaryScreen = () => {
       icon: 'wallet-outline',
       disabled: walletBalance < totalAmount 
     },
-    { key: 'ONLINE', label: 'Online Payment (PayU)', icon: 'card-outline', disabled: false },
+    { key: 'ONLINE', label: 'Online Payment (UPI, Cards, Netbanking)', icon: 'card-outline', disabled: false },
     { key: 'COD', label: 'Cash on Delivery', icon: 'cash-outline', disabled: false },
   ];
 
@@ -917,9 +907,9 @@ const OrderSummaryScreen = () => {
             <View key={item.cart_item_id} style={styles.itemRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.itemName}>{item.name} <Text style={styles.itemQuantity}>(x{item.quantity})</Text></Text>
-                {item.attributes && item.attributes.length > 0 && (
+                {Array.isArray(item.attributes) && item.attributes.length > 0 && (
                   <Text style={styles.itemAttributes}>
-                    {item.attributes.map(a => a.value).join(', ')}
+                    {item.attributes.map(a => (typeof a === 'object' && a !== null ? (a.value || a.attribute_value || '') : String(a))).filter(Boolean).join(', ')}
                   </Text>
                 )}
               </View>
@@ -1007,7 +997,7 @@ const OrderSummaryScreen = () => {
           disabled={isLoading || isSettingsLoading}
         >
           {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.placeOrderButtonText}>
-            {paymentMethod === 'WALLET' ? 'Pay & Confirm' : 'Place Order'}
+            {paymentMethod === 'ONLINE' ? 'Pay Online' : (paymentMethod === 'WALLET' ? 'Pay & Confirm' : 'Place Order')}
           </Text>}
         </TouchableOpacity>
       </View>

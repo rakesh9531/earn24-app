@@ -41,25 +41,17 @@ export const FavoriteProvider = ({ children }) => {
 
     // Check if product is in favorites
     const isFavorite = (productId) => {
+        if (!productId) return false;
         const id = parseInt(productId, 10);
-        return favoriteIds.includes(id);
+        return Array.isArray(favoriteIds) ? favoriteIds.includes(id) : false;
     };
 
     // Toggle favorite with optimistic UI updates
     const toggleFavorite = async (product, navigation = null) => {
         if (!token) {
-            Alert.alert(
-                'Authentication Required',
-                'Please login to save favorite products.',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login Now', onPress: () => {
-                        if (navigation) {
-                            navigation.navigate('Login');
-                        }
-                    }}
-                ]
-            );
+            if (navigation) {
+                navigation.navigate('Login');
+            }
             return { requiredAuth: true };
         }
 

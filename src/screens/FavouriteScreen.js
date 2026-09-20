@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoriteContext';
 import ProductCard from '../components/ProductCard';
+import FloatingCartBar from '../components/FloatingCartBar';
 
 const FavouriteScreen = () => {
   const navigation = useNavigation();
@@ -110,6 +111,7 @@ const FavouriteScreen = () => {
           />
         )}
       />
+      <FloatingCartBar />
     </SafeAreaView>
   );
 };

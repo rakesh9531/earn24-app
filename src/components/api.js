@@ -89,16 +89,21 @@ export const setAuthToken = (token) => {
  * when the app restarts.
  */
 api.interceptors.request.use(async (config) => {
-  // Only check storage if the header isn't already set by setAuthToken
-  if (!config.headers.Authorization) {
-    try {
+  try {
+    const existingAuth = config.headers?.Authorization || config.headers?.['Authorization'] || (typeof config.headers?.get === 'function' && config.headers.get('Authorization'));
+    if (!existingAuth) {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        if (typeof config.headers?.set === 'function') {
+          config.headers.set('Authorization', `Bearer ${token}`);
+        } else {
+          config.headers = config.headers || {};
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
       }
-    } catch (error) {
-      console.error("api.js: Failed to retrieve token from storage.", error);
     }
+  } catch (error) {
+    console.error("api.js: Failed to retrieve token from storage.", error);
   }
   return config;
 }, (error) => {

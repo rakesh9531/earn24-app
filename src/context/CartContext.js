@@ -1083,6 +1083,7 @@
 
 
 import React, { createContext, useState, useContext, useMemo, useCallback, useEffect } from 'react';
+import { Alert } from 'react-native';
 // REMOVED useFocusEffect as it's not suitable for Context Providers
 import { useAuth } from './AuthContext';
 import { usePincode } from './PincodeContext';
@@ -1118,9 +1119,10 @@ export const CartProvider = ({ children }) => {
 
   // 2. Helper: Safe Refresh (Does NOT reset selections)
   const refreshCartData = useCallback(async () => {
-    if (!token || !pincode) return;
+    if (!token) return;
+    const activePin = pincode || 'ALL';
     try {
-      const response = await cartService.getCart(pincode);
+      const response = await cartService.getCart(activePin);
       if (response.status && Array.isArray(response.data)) {
         setCartItems(response.data);
       }
@@ -1132,15 +1134,16 @@ export const CartProvider = ({ children }) => {
   // 3. Helper: Full Initial Load (Resets selections)
   const initialLoadCart = useCallback(async () => {
     // SECURITY CHECK: Don't fetch if no token
-    if (!token || !pincode) {
+    if (!token) {
       setCartItems([]);
       setSelectedItemIds({});
       return;
     }
 
+    const activePin = pincode || 'ALL';
     setIsLoading(true);
     try {
-      const response = await cartService.getCart(pincode);
+      const response = await cartService.getCart(activePin);
       if (response.status && Array.isArray(response.data)) {
         const items = response.data;
         setCartItems(items);
@@ -1201,18 +1204,55 @@ export const CartProvider = ({ children }) => {
     }));
   };
   
-  const addToCart = async (product, quantity) => {
+  const addToCart = async (product, quantity, selectedVariant = null) => {
     if (!token) {
-        alert('Please log in to add items to your cart.');
         return false;
     }
     try {
-      await cartService.addItem({ sellerProductId: product.offer_id, quantity: quantity });
+      const sellerProductId = product ? (product.offer_id || product.id || product.product_id) : null;
+      if (!sellerProductId) {
+        Alert.alert("Error", "Product offer ID not found. Please try another product.");
+        return false;
+      }
+      const variantId = selectedVariant ? selectedVariant.id : (product && product.selected_variant ? product.selected_variant.id : null);
+      
+      // OPTIMISTIC IMMEDIATE LOCAL CART UPDATE (0 MS LATENCY FOR INSTANT FLOATING BAR POPUP)
+      const tempItem = {
+        cart_item_id: 'temp_' + Date.now(),
+        offer_id: sellerProductId,
+        seller_product_variant_id: variantId,
+        product_id: product.product_id || product.id,
+        name: selectedVariant ? `${product.name} (${selectedVariant.title || selectedVariant.color || 'Variant'})` : (product.name || 'Product'),
+        main_image_url: selectedVariant && selectedVariant.variant_image_url ? selectedVariant.variant_image_url : (product.main_image_url || ''),
+        selling_price: selectedVariant && selectedVariant.price ? selectedVariant.price : (product.selling_price || 0),
+        mrp: selectedVariant && selectedVariant.mrp ? selectedVariant.mrp : (product.mrp || 0),
+        quantity: quantity,
+        is_available: true,
+      };
+
+      setCartItems(prev => {
+        const existingIndex = prev.findIndex(item => 
+          item.offer_id === sellerProductId && 
+          ((item.seller_product_variant_id === variantId) || (!item.seller_product_variant_id && !variantId))
+        );
+        if (existingIndex > -1) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            quantity: (updated[existingIndex].quantity || 0) + quantity,
+          };
+          return updated;
+        }
+        return [...prev, tempItem];
+      });
+
+      await cartService.addItem({ sellerProductId: sellerProductId, variantId: variantId, quantity: quantity });
       await refreshCartData(); 
       return true;
     } catch (error) {
       console.error("Failed to add to cart:", error);
-      alert('Could not add item to cart.');
+      Alert.alert("Cart Error", "Could not add item to cart. Please try again.");
+      await refreshCartData();
       return false;
     }
   };

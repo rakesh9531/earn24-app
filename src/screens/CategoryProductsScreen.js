@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity }
 import { usePincode } from '../context/PincodeContext';
 import { productService } from '../services/productService'; // We will create this service next
 import ProductCard from '../components/ProductCard'; // Assuming you have a ProductCard component
+import FloatingCartBar from '../components/FloatingCartBar';
 
 const CategoryProductsScreen = ({ route, navigation }) => {
   // Get the category details passed from the previous screen
@@ -21,9 +22,8 @@ const CategoryProductsScreen = ({ route, navigation }) => {
     navigation.setOptions({ title: categoryName });
   }, [navigation, categoryName]);
 
-  // Function to fetch products for this category
   const fetchProducts = async (pageNum = 1) => {
-    if (!pincode) return;
+    const activePincode = pincode || '';
     
     if (pageNum === 1) {
       setIsLoading(true);
@@ -35,13 +35,12 @@ const CategoryProductsScreen = ({ route, navigation }) => {
     try {
       let response;
       if (isSubcategory) {
-        response = await productService.getProductsBySubcategory(categoryId, pincode, pageNum);
+        response = await productService.getProductsBySubcategory(categoryId, activePincode, pageNum);
       } else {
-        response = await productService.getProductsByCategory(categoryId, pincode, pageNum);
+        response = await productService.getProductsByCategory(categoryId, activePincode, pageNum);
       }
 
       if (response && response.status) {
-        // If it's the first page, set the products. Otherwise, add to the list for infinite scroll.
         setProducts(prev => (pageNum === 1 ? response.data : [...prev, ...response.data]));
         if (response.pagination) {
           setTotalPages(response.pagination.totalPages);
@@ -96,30 +95,33 @@ const CategoryProductsScreen = ({ route, navigation }) => {
   }
 
   return (
-    <FlatList
-      data={products}
-      renderItem={({ item }) => (
-        <View style={styles.productCardContainer}>
-          <ProductCard
-            product={item}
-            onPress={() => navigation.navigate('ProductDetails', { product: item })}
-          />
-        </View>
-      )}
-      keyExtractor={(item, index) => `${item.id}-${index}`}
-      numColumns={2} // Creates a grid layout
-      contentContainerStyle={styles.listContainer}
-      ListEmptyComponent={
-        !isLoading && (
-          <View style={styles.centered}>
-            <Text style={styles.emptyText}>No products found in this category.</Text>
+    <View style={{ flex: 1 }}>
+      <FlatList
+        data={products}
+        renderItem={({ item }) => (
+          <View style={styles.productCardContainer}>
+            <ProductCard
+              product={item}
+              onPress={() => navigation.navigate('ProductDetails', { product: item })}
+            />
           </View>
-        )
-      }
-      onEndReached={handleLoadMore}
-      onEndReachedThreshold={0.5}
-      ListFooterComponent={renderFooter}
-    />
+        )}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
+        numColumns={2} // Creates a grid layout
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          !isLoading && (
+            <View style={styles.centered}>
+              <Text style={styles.emptyText}>No products found in this category.</Text>
+            </View>
+          )
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+      />
+      <FloatingCartBar />
+    </View>
   );
 };
 

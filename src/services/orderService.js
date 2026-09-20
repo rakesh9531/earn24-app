@@ -12,8 +12,8 @@ const createOrder = async (orderData) => {
 };
 
 // Fetches a list of the logged-in user's past orders
-const getOrderHistory = async (page = 1) => {
-    const response = await api.get('/orders', { params: { page } });
+const getOrderHistory = async (page = 1, limit = 20) => {
+    const response = await api.get('/orders', { params: { page, limit } });
     return response.data;
 };
 
@@ -45,13 +45,65 @@ const getInvoiceUrl = (orderId, token) => {
     return `${baseUrl}/${orderId}/invoice?token=${token}`;
 };
 
-const cancelOrder = async (orderId, reason) => {
+const cancelOrder = async (orderId, reason, refundType = 'WALLET') => {
     try {
-        const response = await api.post(`/orders/${orderId}/cancel`, { reason });
+        const response = await api.post(`/orders/${orderId}/cancel`, { 
+            cancellation_reason: reason, 
+            refund_type: refundType 
+        });
         return response.data;
     } catch (error) {
         console.error('API Error in cancelOrder:', error.response?.data || error.message);
         throw error.response?.data || new Error('Failed to cancel order');
+    }
+};
+
+const requestReturn = async (orderId, reason, type = 'RETURN', orderItemId = null, refundMethod = 'WALLET', customerUpiId = null, evidenceImages = null, quantity = 1) => {
+    try {
+        const payload = { 
+            reason, 
+            type, 
+            orderItemId,
+            refund_method: refundMethod,
+            customer_upi_id: customerUpiId,
+            evidence_images: evidenceImages,
+            quantity: quantity || 1
+        };
+        const response = await api.post(`/orders/${orderId}/request-return`, payload);
+        return response.data;
+    } catch (error) {
+        console.error('API Error in requestReturn:', error.response?.data || error.message);
+        throw error.response?.data || new Error('Failed to request return/replacement');
+    }
+};
+
+const cancelOrderItem = async (orderId, itemId, reason) => {
+    try {
+        const response = await api.post(`/orders/${orderId}/items/${itemId}/cancel`, { reason });
+        return response.data;
+    } catch (error) {
+        console.error('API Error in cancelOrderItem:', error.response?.data || error.message);
+        throw error.response?.data || new Error('Failed to cancel item');
+    }
+};
+
+const initiatePayUPayment = async (paymentData) => {
+    try {
+        const response = await api.post('/orders/payu/initiate', paymentData);
+        return response.data;
+    } catch (error) {
+        console.error('API Error in initiatePayUPayment:', error.response?.data || error.message);
+        throw error.response?.data || new Error('Failed to initiate PayU payment');
+    }
+};
+
+const verifyPayUPayment = async (verifyData) => {
+    try {
+        const response = await api.post('/orders/payu/verify', verifyData);
+        return response.data;
+    } catch (error) {
+        console.error('API Error in verifyPayUPayment:', error.response?.data || error.message);
+        throw error.response?.data || new Error('Failed to verify PayU payment');
     }
 };
 
@@ -62,4 +114,8 @@ export const orderService = {
     updatePaymentMethod,
     getInvoiceUrl,
     cancelOrder,
+    cancelOrderItem,
+    requestReturn,
+    initiatePayUPayment,
+    verifyPayUPayment,
 };

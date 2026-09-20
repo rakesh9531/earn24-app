@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput,
-  ActivityIndicator, Keyboard
+  ActivityIndicator, Keyboard, Image, ScrollView, KeyboardAvoidingView, Platform
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { AuthContext } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { useAlert } from '../components/CustomAlert';
 
 const OtpVerificationScreen = ({ navigation, route }) => {
-  const { mobileNumber, flow } = route.params;
+  const { mobileNumber, flow } = route.params || {};
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(30);
@@ -72,80 +73,257 @@ const OtpVerificationScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Verification</Text>
-        <Text style={styles.subtitle}>
-          We sent a verification code to {mobileNumber}.
-        </Text>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.otpInput}
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholder="Enter 6-digit OTP"
-            placeholderTextColor="#C7C7C7"
-            autoFocus
-          />
-        </View>
-
-        <TouchableOpacity 
-          style={[styles.verifyButton, isLoading && styles.disabledButton]} 
-          onPress={handleVerify} 
-          disabled={isLoading}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={{ flex: 1 }}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyText}>Verify & Proceed</Text>}
-        </TouchableOpacity>
+          {/* Top Back Button */}
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.headerBackBtn} onPress={() => navigation.goBack()}>
+              <Icon name="arrow-back" size={22} color="#0F172A" />
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.resendContainer}>
-          <Text style={styles.resendLabel}>Didn't receive code? </Text>
-          <TouchableOpacity onPress={handleResend} disabled={!canResend}>
-            <Text style={[styles.resendLink, !canResend && styles.disabledLink]}>
-              {canResend ? "Resend OTP" : `Resend in ${timer}s`}
+          {/* Header Brand Section */}
+          <View style={styles.headerSection}>
+            <View style={styles.logoContainer}>
+              <Image 
+                source={require('../assets/images/earn24_logo.png')} 
+                style={styles.logoImage} 
+                resizeMode="contain" 
+              />
+              <Text allowFontScaling={false} style={styles.logoText}>Earn24</Text>
+            </View>
+            <Text allowFontScaling={false} style={styles.tagline}>Grow • Earn • Succeed</Text>
+
+            <Text allowFontScaling={false} style={styles.welcomeTitle}>OTP Verification</Text>
+            <Text allowFontScaling={false} style={styles.welcomeSubtitle}>
+              We sent a 6-digit verification code to {'\n'}
+              <Text style={{ fontWeight: '700', color: '#00A63E' }}>+91 {mobileNumber}</Text>
             </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+
+            {/* Shield Avatar Circle */}
+            <View style={styles.avatarCircle}>
+              <Icon name="shield-checkmark" size={24} color="#FFFFFF" />
+            </View>
+          </View>
+
+          {/* White Card Section */}
+          <View style={styles.formCard}>
+            <View style={styles.inputContainer}>
+              <Text allowFontScaling={false} style={styles.inputLabel}>Enter 6-Digit OTP *</Text>
+              <View style={styles.inputBox}>
+                <Icon name="lock-open-outline" size={18} color="#00A63E" style={styles.leftIcon} />
+                <TextInput
+                  style={styles.otpInput}
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  placeholder="• • • • • •"
+                  placeholderTextColor="#94A3B8"
+                  allowFontScaling={false}
+                  autoFocus
+                />
+              </View>
+            </View>
+
+            {/* Verify Button */}
+            <TouchableOpacity 
+              style={[styles.verifyButton, isLoading && styles.disabledButton]} 
+              onPress={handleVerify} 
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <View style={styles.btnContentRow}>
+                  <Icon name="checkmark-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                  <Text allowFontScaling={false} style={styles.verifyText}>Verify & Proceed</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Resend OTP */}
+            <View style={styles.resendContainer}>
+              <Text allowFontScaling={false} style={styles.resendLabel}>Didn't receive code? </Text>
+              <TouchableOpacity onPress={handleResend} disabled={!canResend}>
+                <Text allowFontScaling={false} style={[styles.resendLink, !canResend && styles.disabledLink]}>
+                  {canResend ? "Resend OTP" : `Resend in ${timer}s`}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <AlertModal />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { padding: 30, paddingTop: 60 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#181725', marginBottom: 10 },
-  subtitle: { fontSize: 16, color: '#7C7C7C', marginBottom: 40, lineHeight: 24 },
-  inputContainer: { marginBottom: 30 },
-  otpInput: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    borderBottomWidth: 2,
-    borderBottomColor: '#0CA201',
-    paddingVertical: 10,
+  container: { 
+    flex: 1, 
+    backgroundColor: '#EBF7EF' 
+  },
+  scrollContent: { 
+    flexGrow: 1, 
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  topBar: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  headerBackBtn: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center', 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: '#EBF7EF',
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoImage: {
+    width: 36,
+    height: 36,
+    marginRight: 8,
+  },
+  logoText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#00A63E',
+    letterSpacing: -0.5,
+  },
+  tagline: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 14,
     textAlign: 'center',
-    color: '#181725',
-    letterSpacing: 8
+  },
+  welcomeSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 4,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  avatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#00A63E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    marginBottom: -24,
+    zIndex: 10,
+    shadowColor: '#00A63E',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  formCard: { 
+    paddingHorizontal: 22, 
+    paddingTop: 36, 
+    paddingBottom: 30,
+    backgroundColor: '#FFFFFF', 
+    borderTopLeftRadius: 28, 
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    marginHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 6
+  },
+  inputContainer: { 
+    marginBottom: 20 
+  },
+  inputLabel: { 
+    fontSize: 13, 
+    fontWeight: '600',
+    color: '#334155', 
+    marginBottom: 6 
+  },
+  inputBox: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1, 
+    borderColor: '#E2E8F0', 
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 52,
+  },
+  leftIcon: {
+    marginRight: 8,
+  },
+  otpInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 8,
+    color: '#0F172A',
+    paddingVertical: 0,
   },
   verifyButton: {
-    backgroundColor: '#0CA201',
-    paddingVertical: 18,
-    borderRadius: 20,
+    backgroundColor: '#00A63E',
+    height: 50,
+    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#0CA201',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4
+    justifyContent: 'center',
+    shadowColor: '#00A63E',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  disabledButton: { opacity: 0.7 },
-  verifyText: { color: '#FFF', fontSize: 18, fontWeight: '600' },
-  resendContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 30 },
-  resendLabel: { fontSize: 14, color: '#7C7C7C' },
-  resendLink: { fontSize: 14, color: '#0CA201', fontWeight: 'bold' },
-  disabledLink: { color: '#BDBDBD' }
+  disabledButton: { opacity: 0.6 },
+  btnContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  resendContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  resendLabel: { fontSize: 13, color: '#64748B' },
+  resendLink: { fontSize: 13, color: '#00A63E', fontWeight: '800' },
+  disabledLink: { color: '#94A3B8', fontWeight: '500' }
 });
 
 export default OtpVerificationScreen;

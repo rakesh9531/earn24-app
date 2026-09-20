@@ -6,7 +6,17 @@ import api from '../components/api'; // Make sure this path is correct
  */
 const search = async (params) => {
     try {
-        const response = await api.get('/products/search', { params });
+        const cleanParams = {};
+        if (params) {
+            Object.keys(params).forEach((key) => {
+                const val = params[key];
+                if (val !== undefined && val !== null && val !== 'undefined' && val !== 'null' && val !== '') {
+                    cleanParams[key] = val;
+                }
+            });
+        }
+        console.log('[productService.search] Sending params to API:', cleanParams);
+        const response = await api.get('/products/search', { params: cleanParams });
         return response.data;
     } catch (error) {
         console.error('API Error in search:', error.response?.data || error.message);
@@ -47,10 +57,12 @@ const getSearchSuggestions = async (query) => {
 
 
 
-const getProductById = async (productId) => {
+const getProductById = async (productId, isSellerProduct = false) => {
     try {
         // This now calls the new, public endpoint
-        const response = await api.get(`/products/${productId}`);
+        const response = await api.get(`/products/${productId}`, {
+            params: isSellerProduct ? { is_seller_product: 1 } : {}
+        });
         return response.data;
     } catch (error) {
         console.error(`API Error fetching product ${productId}:`, error.response?.data || error.message);
@@ -85,11 +97,21 @@ const getProductsBySubcategory = async (subcategoryId, pincode, page = 1) => {
 
 
 
+const checkPincode = async (pincode) => {
+    try {
+        const response = await api.get(`/products/check-pincode/${pincode}`);
+        return response.data;
+    } catch (error) {
+        return { status: false, message: error.response?.data?.message || 'Invalid pincode format.' };
+    }
+};
+
 export const productService = {
     search,
     getTrendingSearches,
     getSearchSuggestions,
     getProductById,
     getProductsByCategory,
-    getProductsBySubcategory
+    getProductsBySubcategory,
+    checkPincode
 };

@@ -164,6 +164,9 @@ import { AuthContext } from '../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
 import { useAlert } from '../components/CustomAlert';
+import { IMAGE_BASE_URL } from '../config';
+
+const serverUrl = IMAGE_BASE_URL || 'https://newapi.earn24.in';
 
 const MenuItem = ({ item, onPress }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
@@ -184,16 +187,119 @@ const ProfileScreen = ({ navigation }) => {
     const [editName, setEditName] = useState('');
     const [editEmail, setEditEmail] = useState('');
     const [editMobile, setEditMobile] = useState('');
+    const [editPassword, setEditPassword] = useState('');
     const [isSavingText, setIsSavingText] = useState(false);
     const { showAlert, AlertModal } = useAlert();
 
-    const serverUrl = 'https://newapi.earn24.in';
+    // --- OTP State for Profile Edit ---
+    const [editEmailOtp, setEditEmailOtp] = useState('');
+    const [isEditEmailOtpSent, setIsEditEmailOtpSent] = useState(false);
+    const [isEditEmailVerified, setIsEditEmailVerified] = useState(false);
+    const [isSendingEditEmailOtp, setIsSendingEditEmailOtp] = useState(false);
+    const [isVerifyingEditEmailOtp, setIsVerifyingEditEmailOtp] = useState(false);
+
+    const [editMobileOtp, setEditMobileOtp] = useState('');
+    const [isEditMobileOtpSent, setIsEditMobileOtpSent] = useState(false);
+    const [isEditMobileVerified, setIsEditMobileVerified] = useState(false);
+    const [isSendingEditMobileOtp, setIsSendingEditMobileOtp] = useState(false);
+    const [isVerifyingEditMobileOtp, setIsVerifyingEditMobileOtp] = useState(false);
 
     const openEditModal = () => {
         setEditName(user?.full_name || '');
         setEditEmail(user?.email || '');
         setEditMobile(user?.mobile_number || '');
+        setEditPassword('');
+
+        setEditEmailOtp('');
+        setIsEditEmailOtpSent(false);
+        setIsEditEmailVerified(false);
+
+        setEditMobileOtp('');
+        setIsEditMobileOtpSent(false);
+        setIsEditMobileVerified(false);
+
         setIsEditModalVisible(true);
+    };
+
+    const handleSendEditEmailOtp = async () => {
+        if (!editEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
+            showAlert('error', 'Invalid Email', 'Please enter a valid email address.');
+            return;
+        }
+        setIsSendingEditEmailOtp(true);
+        try {
+            const response = await axios.post(`${serverUrl}/api/user/send-email-otp`, { email: editEmail.trim() });
+            if (response.data.status) {
+                setIsEditEmailOtpSent(true);
+                showAlert('success', 'OTP Sent 📧', response.data.message || `OTP sent to ${editEmail}.`);
+                if (response.data.mockOtp) setEditEmailOtp(response.data.mockOtp);
+            }
+        } catch (e) {
+            showAlert('error', 'Failed', e.response?.data?.message || 'Could not send Email OTP.');
+        } finally {
+            setIsSendingEditEmailOtp(false);
+        }
+    };
+
+    const handleVerifyEditEmailOtp = async () => {
+        if (!editEmailOtp.trim()) {
+            showAlert('error', 'Enter OTP', 'Please enter the Email OTP.');
+            return;
+        }
+        setIsVerifyingEditEmailOtp(true);
+        try {
+            const response = await axios.post(`${serverUrl}/api/user/verify-email-otp`, { email: editEmail.trim(), otp: editEmailOtp.trim() });
+            if (response.data.status) {
+                setIsEditEmailVerified(true);
+                showAlert('success', 'Email Verified! ✓', 'Email verified successfully.');
+            }
+        } catch (e) {
+            showAlert('error', 'Verification Failed', e.response?.data?.message || 'Invalid Email OTP.');
+        } finally {
+            setIsVerifyingEditEmailOtp(false);
+        }
+    };
+
+    const handleSendEditMobileOtp = async () => {
+        if (!editMobile || editMobile.trim().length !== 10) {
+            showAlert('error', 'Invalid Mobile', 'Please enter a valid 10-digit mobile number.');
+            return;
+        }
+        setIsSendingEditMobileOtp(true);
+        try {
+            const response = await axios.post(`${serverUrl}/api/user/profile/send-mobile-otp`, { mobile_number: editMobile.trim() }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.data.status) {
+                setIsEditMobileOtpSent(true);
+                showAlert('success', 'OTP Sent 📱', response.data.message || `OTP sent to ${editMobile}.`);
+            }
+        } catch (e) {
+            showAlert('error', 'Failed', e.response?.data?.message || 'Could not send Mobile OTP.');
+        } finally {
+            setIsSendingEditMobileOtp(false);
+        }
+    };
+
+    const handleVerifyEditMobileOtp = async () => {
+        if (!editMobileOtp.trim()) {
+            showAlert('error', 'Enter OTP', 'Please enter the Mobile OTP.');
+            return;
+        }
+        setIsVerifyingEditMobileOtp(true);
+        try {
+            const response = await axios.post(`${serverUrl}/api/user/profile/verify-mobile-otp`, { mobile_number: editMobile.trim(), otp: editMobileOtp.trim() }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.data.status) {
+                setIsEditMobileVerified(true);
+                showAlert('success', 'Mobile Verified! ✓', 'Mobile number verified successfully.');
+            }
+        } catch (e) {
+            showAlert('error', 'Verification Failed', e.response?.data?.message || 'Invalid Mobile OTP.');
+        } finally {
+            setIsVerifyingEditMobileOtp(false);
+        }
     };
 
     const handleSaveDetails = async () => {
@@ -202,18 +308,42 @@ const ProfileScreen = ({ navigation }) => {
             return;
         }
 
+        const isEmailChanged = editEmail.trim() !== (user?.email || '');
+        const isMobileChanged = editMobile.trim() !== (user?.mobile_number || '');
+
+        if (isEmailChanged && !isEditEmailVerified) {
+            showAlert('error', 'Verify Email OTP', 'Please verify your new Email Address with OTP before saving.');
+            return;
+        }
+
+        if (isMobileChanged && !isEditMobileVerified) {
+            showAlert('error', 'Verify Mobile OTP', 'Please verify your new Mobile Number with OTP before saving.');
+            return;
+        }
+
+        if ((isEmailChanged || isMobileChanged) && !editPassword.trim()) {
+            showAlert('error', 'Password Required 🔒', 'Please enter your current account password to change Email Address or Mobile Number.');
+            return;
+        }
+
         try {
             setIsSavingText(true);
             const response = await axios.put(`${serverUrl}/api/user/profile/update`, {
                 full_name: editName.trim(),
                 email: editEmail.trim(),
-                mobile_number: editMobile.trim()
+                mobile_number: editMobile.trim(),
+                password: editPassword.trim()
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (response.data.status) {
-                updateUser(response.data.user);
+                updateUser(response.data.user || {
+                    ...user,
+                    full_name: editName.trim(),
+                    email: editEmail.trim(),
+                    mobile_number: editMobile.trim()
+                });
                 setIsEditModalVisible(false);
                 showAlert('success', 'Profile Updated! 🎉', 'Your profile details have been updated successfully.');
             }
@@ -305,7 +435,10 @@ const ProfileScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={!user ? { flexGrow: 1, justifyContent: 'center', backgroundColor: '#EBF7EF' } : null}
+            >
                 {user ? (
                     <View style={styles.content}>
                         <View style={styles.profileHeader}>
@@ -313,7 +446,7 @@ const ProfileScreen = ({ navigation }) => {
                             <TouchableOpacity onPress={handlePickImage} disabled={isUpdating} activeOpacity={0.7}>
                                 <View style={styles.avatarWrapper}>
                                     <Image
-                                        source={{ uri: user.user_pic ? `${serverUrl}${user.user_pic}` : `https://ui-avatars.com/api/?name=${user.full_name}&background=random` }}
+                                        source={{ uri: user?.user_pic ? `${serverUrl}${user.user_pic}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'User')}&background=random` }}
                                         style={styles.profilePic}
                                     />
                                     <View style={styles.cameraBadge}>
@@ -326,20 +459,20 @@ const ProfileScreen = ({ navigation }) => {
                                 </View>
                             </TouchableOpacity>
 
-                            <Text style={styles.profileName}>{user.full_name}</Text>
+                            <Text style={styles.profileName}>{user?.full_name || 'User'}</Text>
 
                             <View style={styles.rankBadge}>
                                 <Icon name="ribbon" size={14} color="#FFF" />
-                                <Text style={styles.rankText}>{formatRank(user.rank)}</Text>
+                                <Text style={styles.rankText}>{formatRank(user?.rank)}</Text>
                             </View>
 
-                            <Text style={styles.profileEmail}>{user.email}</Text>
+                            <Text style={styles.profileEmail}>{user?.email || ''}</Text>
                         </View>
 
                         <View style={styles.referralBox}>
                             <Text style={styles.referralTitle}>Your Referral Code</Text>
-                            <Text style={styles.referralCode}>{user.username}</Text>
-                            <TouchableOpacity style={styles.shareButtton} onPress={() => handleShare(user.username)}>
+                            <Text style={styles.referralCode}>{user?.username || ''}</Text>
+                            <TouchableOpacity style={styles.shareButtton} onPress={() => handleShare(user?.username || '')}>
                                 <Icon name="share-social-outline" size={20} color="#FFFFFF" />
                                 <Text style={styles.shareButtonText}>Share Code</Text>
                             </TouchableOpacity>
@@ -357,20 +490,69 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 ) : (
-                    // <View style={styles.loggedOutContent}>
-                    //     <Text style={styles.loggedOutTitle}>Welcome to Earn 24</Text>
-                    //     <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('SignUp')}><Text style={styles.buttonText}>Sign Up</Text></TouchableOpacity>
-                    //     <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}><Text style={styles.buttonText}>Log In</Text></TouchableOpacity>
-                    // </View>
+                    <View style={styles.loggedOutWrapper}>
+                        {/* Brand Header Section */}
+                        <View style={styles.loggedOutHeader}>
+                            <View style={styles.logoContainer}>
+                                <Image 
+                                    source={require('../assets/images/earn24_logo.png')} 
+                                    style={styles.logoImage} 
+                                    resizeMode="contain" 
+                                />
+                                <Text allowFontScaling={false} style={styles.logoText}>Earn24</Text>
+                            </View>
+                            <Text allowFontScaling={false} style={styles.tagline}>Grow • Earn • Succeed</Text>
 
-                    <View style={[styles.content, styles.loggedOutContent]}>
-                        <Text style={styles.loggedOutTitle}>Welcome to Earn24</Text>
-                        <Text style={styles.loggedOutSubtitle}>Please log in or sign up to continue</Text>
-                        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('SignUp')}><Text style={styles.buttonText}>Sign Up</Text></TouchableOpacity>
-                        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}><Text style={styles.buttonText}>Log In</Text></TouchableOpacity>
+                            <Text allowFontScaling={false} style={styles.welcomeTitle}>Welcome to Earn24</Text>
+                            <Text allowFontScaling={false} style={styles.welcomeSubtitle}>Please login or sign up to continue</Text>
+
+                            {/* User Avatar Circle */}
+                            <View style={styles.avatarCircle}>
+                                <Icon name="person" size={24} color="#FFFFFF" />
+                            </View>
+                        </View>
+
+                        {/* Guest Action Card */}
+                        <View style={styles.guestCard}>
+                            <TouchableOpacity 
+                                style={styles.signUpBtn} 
+                                onPress={() => navigation.navigate('SignUp')}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.btnContentRow}>
+                                    <Icon name="person-add-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                                    <Text allowFontScaling={false} style={styles.signUpBtnText}>Sign Up</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={styles.loginBtnOutlined} 
+                                onPress={() => navigation.navigate('Login')}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.btnContentRow}>
+                                    <Icon name="log-in-outline" size={18} color="#00A63E" style={{ marginRight: 8 }} />
+                                    <Text allowFontScaling={false} style={styles.loginBtnOutlinedText}>Login</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Feature Chips */}
+                            <View style={styles.featureChipsRow}>
+                                <View style={styles.chipItem}>
+                                    <Icon name="shield-checkmark-outline" size={13} color="#00A63E" />
+                                    <Text allowFontScaling={false} style={styles.chipText}>Secure</Text>
+                                </View>
+                                <View style={styles.chipItem}>
+                                    <Icon name="flash-outline" size={13} color="#00A63E" />
+                                    <Text allowFontScaling={false} style={styles.chipText}>Fast</Text>
+                                </View>
+                                <View style={styles.chipItem}>
+                                    <Icon name="headset-outline" size={13} color="#00A63E" />
+                                    <Text allowFontScaling={false} style={styles.chipText}>24/7 Support</Text>
+                                </View>
+                            </View>
+                        </View>
                     </View>
-
-
                 )}
             </ScrollView>
 
@@ -395,30 +577,124 @@ const ProfileScreen = ({ navigation }) => {
                             />
                         </View>
 
+                        {/* Email Address with OTP */}
                         <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Email Address</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text style={styles.inputLabel}>Email Address</Text>
+                                {editEmail.trim() !== (user?.email || '') && (
+                                    isEditEmailVerified ? (
+                                        <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '700' }}>✓ Verified</Text>
+                                    ) : (
+                                        <TouchableOpacity onPress={handleSendEditEmailOtp} disabled={isSendingEditEmailOtp}>
+                                            <Text style={{ fontSize: 12, color: '#0CA201', fontWeight: '700', textDecorationLine: 'underline' }}>
+                                                {isSendingEditEmailOtp ? 'Sending...' : (isEditEmailOtpSent ? 'Resend OTP' : 'Send Email OTP')}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )
+                                )}
+                            </View>
                             <TextInput
                                 style={styles.textInput}
                                 value={editEmail}
-                                onChangeText={setEditEmail}
+                                onChangeText={(val) => {
+                                    setEditEmail(val);
+                                    setIsEditEmailVerified(false);
+                                    setIsEditEmailOtpSent(false);
+                                }}
                                 placeholder="Enter Email Address"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 placeholderTextColor="#999"
+                                editable={!isEditEmailVerified}
                             />
+                            {editEmail.trim() !== (user?.email || '') && isEditEmailOtpSent && !isEditEmailVerified && (
+                                <View style={{ flexDirection: 'row', marginTop: 8, gap: 8 }}>
+                                    <TextInput
+                                        style={[styles.textInput, { flex: 1, height: 40, fontSize: 13 }]}
+                                        placeholder="Enter Email OTP"
+                                        keyboardType="number-pad"
+                                        value={editEmailOtp}
+                                        onChangeText={setEditEmailOtp}
+                                        placeholderTextColor="#999"
+                                    />
+                                    <TouchableOpacity 
+                                        style={{ backgroundColor: '#0CA201', paddingHorizontal: 12, borderRadius: 8, justifyContent: 'center' }}
+                                        onPress={handleVerifyEditEmailOtp}
+                                        disabled={isVerifyingEditEmailOtp}
+                                    >
+                                        <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 12 }}>Verify</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
 
+                        {/* Mobile Number with OTP */}
                         <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Mobile Number</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text style={styles.inputLabel}>Mobile Number</Text>
+                                {editMobile.trim() !== (user?.mobile_number || '') && (
+                                    isEditMobileVerified ? (
+                                        <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '700' }}>✓ Verified</Text>
+                                    ) : (
+                                        <TouchableOpacity onPress={handleSendEditMobileOtp} disabled={isSendingEditMobileOtp}>
+                                            <Text style={{ fontSize: 12, color: '#0CA201', fontWeight: '700', textDecorationLine: 'underline' }}>
+                                                {isSendingEditMobileOtp ? 'Sending...' : (isEditMobileOtpSent ? 'Resend OTP' : 'Send Mobile OTP')}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )
+                                )}
+                            </View>
                             <TextInput
                                 style={styles.textInput}
                                 value={editMobile}
-                                onChangeText={setEditMobile}
+                                onChangeText={(val) => {
+                                    setEditMobile(val);
+                                    setIsEditMobileVerified(false);
+                                    setIsEditMobileOtpSent(false);
+                                }}
                                 placeholder="Enter Mobile Number"
                                 keyboardType="phone-pad"
+                                maxLength={10}
                                 placeholderTextColor="#999"
+                                editable={!isEditMobileVerified}
                             />
+                            {editMobile.trim() !== (user?.mobile_number || '') && isEditMobileOtpSent && !isEditMobileVerified && (
+                                <View style={{ flexDirection: 'row', marginTop: 8, gap: 8 }}>
+                                    <TextInput
+                                        style={[styles.textInput, { flex: 1, height: 40, fontSize: 13 }]}
+                                        placeholder="Enter Mobile OTP"
+                                        keyboardType="number-pad"
+                                        maxLength={6}
+                                        value={editMobileOtp}
+                                        onChangeText={setEditMobileOtp}
+                                        placeholderTextColor="#999"
+                                    />
+                                    <TouchableOpacity 
+                                        style={{ backgroundColor: '#0CA201', paddingHorizontal: 12, borderRadius: 8, justifyContent: 'center' }}
+                                        onPress={handleVerifyEditMobileOtp}
+                                        disabled={isVerifyingEditMobileOtp}
+                                    >
+                                        <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 12 }}>Verify</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
+
+                        {(editEmail.trim() !== (user?.email || '') || editMobile.trim() !== (user?.mobile_number || '')) && (
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: '#D97706', fontWeight: '700' }]}>
+                                    🔒 Secret Password (Required for Email/Mobile update)
+                                </Text>
+                                <TextInput
+                                    style={[styles.textInput, { borderColor: '#F59E0B' }]}
+                                    value={editPassword}
+                                    onChangeText={setEditPassword}
+                                    placeholder="Enter current password to authorize change"
+                                    secureTextEntry
+                                    placeholderTextColor="#999"
+                                />
+                            </View>
+                        )}
 
                         <View style={styles.modalActions}>
                             <TouchableOpacity 
@@ -472,11 +748,147 @@ const styles = StyleSheet.create({
     menuItemText: { marginLeft: 15, fontSize: 16, color: '#181725', fontWeight: '600' },
     logoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 40, padding: 15 },
     logoutButtonText: { color: '#D32F2F', marginLeft: 10, fontSize: 16, fontWeight: 'bold' },
-    loggedOutContent: { paddingTop: 150, alignItems: 'center', paddingHorizontal: 25 },
-    loggedOutTitle: { fontSize: 24, fontWeight: 'bold', color: '#181725', marginBottom: 10 },
-    loggedOutSubtitle: { fontSize: 16, color: '#7C7C7C', marginBottom: 40, textAlign: 'center' },
-    button: { backgroundColor: '#0CA201', paddingVertical: 18, borderRadius: 15, alignItems: 'center', justifyContent: 'center', width: '100%', marginBottom: 15 },
-    buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+    loggedOutWrapper: {
+        flex: 1,
+        justifyContent: 'center',
+        backgroundColor: '#EBF7EF',
+        paddingVertical: 10,
+    },
+    loggedOutHeader: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 40,
+        paddingBottom: 16,
+        backgroundColor: '#EBF7EF',
+    },
+    logoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    logoImage: {
+        width: 36,
+        height: 36,
+        marginRight: 8,
+    },
+    logoText: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: '#00A63E',
+        letterSpacing: -0.5,
+    },
+    tagline: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#64748B',
+        marginTop: 2,
+        letterSpacing: 0.5,
+    },
+    welcomeTitle: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: '#0F172A',
+        marginTop: 14,
+        textAlign: 'center',
+    },
+    welcomeSubtitle: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#64748B',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    avatarCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#00A63E',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 14,
+        marginBottom: -24,
+        zIndex: 10,
+        shadowColor: '#00A63E',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    guestCard: {
+        paddingHorizontal: 22,
+        paddingTop: 38,
+        paddingBottom: 30,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
+        marginHorizontal: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 16,
+        elevation: 6
+    },
+    signUpBtn: {
+        backgroundColor: '#00A63E',
+        height: 50,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
+        shadowColor: '#00A63E',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    btnContentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    signUpBtnText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    loginBtnOutlined: {
+        backgroundColor: '#FFFFFF',
+        height: 50,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: '#00A63E',
+        marginBottom: 20,
+    },
+    loginBtnOutlinedText: {
+        color: '#00A63E',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    featureChipsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#F0FDF4',
+        borderRadius: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: '#DCFCE7',
+    },
+    chipItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    chipText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#166534',
+    },
 
     // Modal Styles
     modalOverlay: {

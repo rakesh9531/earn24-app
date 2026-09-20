@@ -5,9 +5,9 @@ import { useCart } from '../context/CartContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const FloatingCartBar = () => {
+const FloatingCartBar = ({ visible }) => {
   const navigation = useNavigation();
-  const { cartItems, totalPhysicalItems  } = useCart();
+  const { cartItems, totalPhysicalItems } = useCart();
   const insets = useSafeAreaInsets();
 
   const isIos = Platform.OS === 'ios';
@@ -16,56 +16,58 @@ const FloatingCartBar = () => {
     : (insets.bottom > 0 ? 60 + insets.bottom : 65);
   const bottomPosition = tabHeight + 10;
 
-  // --- NEW STATE & ANIMATION LOGIC ---
-  const [isVisible, setIsVisible] = useState(false);
-  // Use Animated.Value for smooth animations
-  const animatedValue = new Animated.Value(0);
+  const [internalVisible, setInternalVisible] = useState(false);
+  const animatedValue = React.useRef(new Animated.Value(0)).current;
+  const isFirstMount = React.useRef(true);
+  const prevCount = React.useRef(totalPhysicalItems);
+
+  // If visible prop is explicitly passed by parent, use it; otherwise use internal timer
+  const isShown = visible !== undefined ? visible : internalVisible;
 
   useEffect(() => {
-    // This effect runs whenever the number of items in the cart changes.
-    if (totalPhysicalItems  > 0) {
-      // If items are in the cart, make the bar visible.
-      setIsVisible(true);
-      // Set a timer to automatically hide the bar after 4 seconds (4000 ms).
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-      }, 1000);
-
-      // Clean up the timer if the component unmounts or if the cart changes again.
-      return () => clearTimeout(timer);
-    } else {
-      // If the cart is empty, make sure the bar is hidden.
-      setIsVisible(false);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      prevCount.current = totalPhysicalItems;
+      return;
     }
-  }, [totalPhysicalItems ]); // The key dependency: this effect re-runs when totalPhysicalItems  changes.
 
+    if (totalPhysicalItems > prevCount.current) {
+      setInternalVisible(true);
+      const timer = setTimeout(() => {
+        setInternalVisible(false);
+      }, 3500);
+      prevCount.current = totalPhysicalItems;
+      return () => clearTimeout(timer);
+    }
 
-  // This effect handles the smooth fade-in and slide-up animation.
+    prevCount.current = totalPhysicalItems;
+    if (totalPhysicalItems === 0) {
+      setInternalVisible(false);
+    }
+  }, [totalPhysicalItems]);
+
   useEffect(() => {
     Animated.timing(animatedValue, {
-      toValue: isVisible ? 1 : 0, // Animate to 1 (visible) or 0 (hidden)
-      duration: 100, // Animation duration in milliseconds
-      useNativeDriver: true, // Use native driver for better performance
+      toValue: isShown ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
     }).start();
-  }, [isVisible]); // This effect re-runs when `isVisible` changes.
+  }, [isShown]);
 
-
-  // Define the animated styles
   const animatedContainerStyle = {
-    opacity: animatedValue, // Fade in/out
+    opacity: animatedValue,
     transform: [
       {
         translateY: animatedValue.interpolate({
           inputRange: [0, 1],
-          outputRange: [100, 0], // Slide up from bottom
+          outputRange: [100, 0],
         }),
       },
     ],
   };
-  // --- END OF NEW LOGIC ---
 
-  // If the cart is completely empty, don't render anything at all.
-  if (cartItems.length === 0) {
+  // If cart is empty OR bar is hidden, return null so it disappears completely
+  if (cartItems.length === 0 || !isShown) {
     return null;
   }
   

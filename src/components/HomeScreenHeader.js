@@ -35,13 +35,13 @@
 // //           {banners.map((banner) => (
 // //             <TouchableOpacity key={banner.id} style={styles.slide}>
 // //               <View style={styles.bannerContainer}>
-                
+
 // //                 {/* Text content */}
 // //                 <View style={styles.textContainer}>
 // //                   {banner.title && (
 // //                     <Text style={styles.bannerTitle} numberOfLines={2}>{banner.title}</Text>
 // //                   )}
-                  
+
 // //                   <Text style={styles.bannerSubtitle}>Enjoy our big offer</Text>
 
 // //                   <TouchableOpacity style={styles.shopNowButton}>
@@ -63,7 +63,7 @@
 // //           ))}
 // //         </Swiper>
 // //       </View>
-      
+
 // //       {/* --- Categories Section --- */}
 // //       <View style={styles.categoriesSection}>
 // //         <Text style={styles.sectionTitle}>Shop by Category</Text>
@@ -247,13 +247,13 @@
 // //             // ========================================================
 // //             <View key={banner.id} style={styles.slide}>
 // //               <TouchableOpacity style={styles.bannerContainer} activeOpacity={0.9}>
-                
+
 // //                 {/* Text content */}
 // //                 <View style={styles.textContainer}>
 // //                   {banner.title && (
 // //                     <Text style={styles.bannerTitle} numberOfLines={2}>{banner.title}</Text>
 // //                   )}
-                  
+
 // //                   <Text style={styles.bannerSubtitle}>Enjoy our big offer</Text>
 
 // //                   <TouchableOpacity style={styles.shopNowButton}>
@@ -275,7 +275,7 @@
 // //           ))}
 // //         </Swiper>
 // //       </View>
-      
+
 // //       {/* --- Categories Section --- */}
 // //       <View style={styles.categoriesSection}>
 // //         <Text style={styles.sectionTitle}>Shop by Category</Text>
@@ -533,7 +533,7 @@
 //           ))}
 //         </Swiper>
 //       </View>
-      
+
 //       {/* Categories Section */}
 //       <View style={styles.categoriesSection}>
 //         <Text style={styles.sectionTitle}>Shop by Category</Text>
@@ -690,7 +690,7 @@
 //           </View>
 //         ))}
 //       </Swiper>
-      
+
 //       {/* Categories Section (Unchanged) */}
 //       <View style={styles.categoriesSection}>
 //         <Text style={styles.sectionTitle}>Shop by Category</Text>
@@ -741,7 +741,7 @@
 //     resizeMode: 'cover',
 //   },
 //   // --- END OF FIX ---
-  
+
 //   paginationDot: { 
 //     backgroundColor: 'rgba(0, 0, 0, 0.3)', 
 //     width: 8, 
@@ -760,7 +760,7 @@
 //     backgroundColor: '#E5E7EB',
 //     height: 150,
 //   },
-  
+
 //   // -- Categories Section Styles (Unchanged) --
 //   categoriesSection: { 
 //     marginTop: 24 
@@ -960,11 +960,11 @@
 //           </View>
 //         ))}
 //       </Swiper>
-      
+
 //       {/* --- Categories Section with Parent and Sub-Categories --- */}
 //       <View style={styles.categoriesSection}>
 //         <Text style={styles.sectionTitle}>Shop by Category</Text>
-        
+
 //         {/* Parent Category Tabs */}
 //         <FlatList
 //           data={categories}
@@ -974,7 +974,7 @@
 //           showsHorizontalScrollIndicator={false}
 //           contentContainerStyle={styles.parentTabList}
 //         />
-        
+
 //         {/* Sub-Category Icons */}
 //         {activeParentCategory && (
 //           <FlatList
@@ -1001,7 +1001,7 @@
 //   paginationDot: { backgroundColor: 'rgba(0, 0, 0, 0.3)', width: 8, height: 8, borderRadius: 4, margin: 3 },
 //   activePaginationDot: { backgroundColor: COLORS.primary, width: 10, height: 10, borderRadius: 5, margin: 3 },
 //   skeletonBanner: { backgroundColor: '#E5E7EB', height: 150 },
-  
+
 //   // --- NEW & REDESIGNED CATEGORY STYLES ---
 //   categoriesSection: { 
 //     marginTop: SIZES.padding,
@@ -1110,17 +1110,17 @@ const SIZES = {
 const SubCategoryItem = memo(({ item, navigation }) => {
   if (!item) return null;
   return (
-    <TouchableOpacity 
-      style={styles.subCategoryItem} 
+    <TouchableOpacity
+      style={styles.subCategoryItem}
       onPress={() => navigation.navigate('CategoryProducts', { categoryId: item.id, categoryName: item.name, isSubcategory: true })}
     >
       <View style={styles.subCategoryImageContainer}>
-        <Image 
-          source={item.image_url 
-              ? { uri: `https://newapi.earn24.in${item.image_url}` } 
-              : require('../assets/images/banner.png')
-          } 
-          style={styles.subCategoryImage} 
+        <Image
+          source={item.image_url
+            ? { uri: `https://newapi.earn24.in${item.image_url}` }
+            : require('../assets/images/banner.png')
+          }
+          style={styles.subCategoryImage}
         />
       </View>
       <Text style={styles.subCategoryName} numberOfLines={2}>{item.name}</Text>
@@ -1130,7 +1130,7 @@ const SubCategoryItem = memo(({ item, navigation }) => {
 
 // --- The Main Header Component, now controlled by HomeScreen ---
 const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId, onCategorySelect }) => {
-  
+
   const handleBannerPress = (banner) => {
     Alert.alert("Banner Tapped", `You tapped on banner: ${banner.title || 'Untitled'}`);
   };
@@ -1139,7 +1139,7 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
     if (!item) return null;
     const isActive = selectedCategoryId === item.id;
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.parentTab, isActive && styles.parentTabActive]}
         onPress={() => onCategorySelect(item.id)}
       >
@@ -1152,11 +1152,11 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
   if (!banners || banners.length === 0) {
     return (
       <View style={[styles.slide, { paddingTop: 10, paddingBottom: 10 }]}>
-          <View style={[styles.bannerContainer, styles.skeletonBanner]} />
+        <View style={[styles.bannerContainer, styles.skeletonBanner]} />
       </View>
     );
   }
-  
+
   // FIND the active category object based on the ID received from the parent
   const activeParentCategory = categories?.find(cat => cat.id === selectedCategoryId);
 
@@ -1177,13 +1177,13 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
           const bannerKey = banner.id !== undefined && banner.id !== null ? `${banner.id}-${index}` : index.toString();
           return (
             <View key={bannerKey} style={styles.slide}>
-              <TouchableOpacity 
-                style={styles.bannerContainer} 
+              <TouchableOpacity
+                style={styles.bannerContainer}
                 activeOpacity={0.9}
                 onPress={() => handleBannerPress(banner)}
               >
                 <Image
-                  source={{ uri: `https://newapi.earn24.in${banner.image_url}` }} 
+                  source={{ uri: `https://newapi.earn24.in${banner.image_url}` }}
                   style={styles.bannerImage}
                 />
               </TouchableOpacity>
@@ -1191,11 +1191,11 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
           );
         })}
       </Swiper>
-      
+
       {/* --- Categories Section with Parent and Sub-Categories --- */}
       <View style={styles.categoriesSection}>
         <Text style={styles.sectionTitle}>Shop by Category</Text>
-        
+
         {/* Parent Category Tabs */}
         <FlatList
           data={categories}
@@ -1205,7 +1205,7 @@ const HomeScreenHeader = ({ banners, categories, navigation, selectedCategoryId,
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.parentTabList}
         />
-        
+
         {/* Sub-Category Icons */}
         {activeParentCategory && (
           <FlatList
@@ -1232,17 +1232,17 @@ const styles = StyleSheet.create({
   paginationDot: { backgroundColor: 'rgba(0, 0, 0, 0.3)', width: 8, height: 8, borderRadius: 4, margin: 3 },
   activePaginationDot: { backgroundColor: COLORS.primary, width: 10, height: 10, borderRadius: 5, margin: 3 },
   skeletonBanner: { backgroundColor: '#E5E7EB', height: 150 },
-  
+
   // --- NEW & REDESIGNED CATEGORY STYLES ---
-  categoriesSection: { 
+  categoriesSection: {
     marginTop: SIZES.padding,
   },
-  sectionTitle: { 
-    fontSize: 20, 
-    fontWeight: '700', 
-    color: COLORS.text, 
-    marginBottom: SIZES.padding, 
-    paddingHorizontal: SIZES.padding 
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SIZES.padding,
+    paddingHorizontal: SIZES.padding
   },
   parentTabList: {
     paddingHorizontal: SIZES.padding,
@@ -1268,21 +1268,21 @@ const styles = StyleSheet.create({
   parentTabTextActive: {
     color: COLORS.white,
   },
-  subCategoryList: { 
-    paddingHorizontal: SIZES.padding 
+  subCategoryList: {
+    paddingHorizontal: SIZES.padding
   },
-  subCategoryItem: { 
-    alignItems: 'center', 
-    marginRight: SIZES.padding, 
+  subCategoryItem: {
+    alignItems: 'center',
+    marginRight: SIZES.padding,
     width: 85,
   },
-  subCategoryImageContainer: { 
-    width: 70, 
-    height: 70, 
-    borderRadius: 35, 
+  subCategoryImageContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: COLORS.surface,
-    justifyContent: 'center', 
-    alignItems: 'center', 
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1290,22 +1290,22 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     marginBottom: SIZES.base,
   },
-  subCategoryImage: { 
-    width: '100%', 
+  subCategoryImage: {
+    width: '100%',
     height: '100%',
     borderRadius: 35,
     resizeMode: 'cover',
   },
-  subCategoryName: { 
-    fontSize: 12, 
-    textAlign: 'center', 
-    color: COLORS.textLight, 
+  subCategoryName: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: COLORS.textLight,
     fontWeight: '600',
   },
 });
 
 export default memo(HomeScreenHeader, (prevProps, nextProps) => {
   return prevProps.selectedCategoryId === nextProps.selectedCategoryId &&
-         prevProps.banners === nextProps.banners &&
-         prevProps.categories === nextProps.categories;
+    prevProps.banners === nextProps.banners &&
+    prevProps.categories === nextProps.categories;
 });

@@ -106,11 +106,31 @@ const resendOtp = async (data) => {
     }
 };
 
+const sendEmailOtp = async (data) => {
+    try {
+        const response = await api.post('/user/send-email-otp', data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || new Error('Failed to send Email OTP');
+    }
+};
+
+const verifyEmailOtp = async (data) => {
+    try {
+        const response = await api.post('/user/verify-email-otp', data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || new Error('Email OTP Verification failed');
+    }
+};
+
 export const authService = {
     login,
     registerInitiate,
     registerVerify,
     forgotPasswordInitiate,
     resetPasswordVerify,
-    resendOtp
+    resendOtp,
+    sendEmailOtp,
+    verifyEmailOtp
 };

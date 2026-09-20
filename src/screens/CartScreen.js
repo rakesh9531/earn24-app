@@ -726,8 +726,9 @@
 
 
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useCart } from '../context/CartContext';
+import { useAlert } from '../components/CustomAlert';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -759,7 +760,7 @@ const FONTS = {
 // ==========================================================
 // === CartItem Component (Redesigned for Clarity)        ===
 // ==========================================================
-const CartItem = ({ item }) => {
+const CartItem = ({ item, onRequireAlert }) => {
     const {
         updateQuantity,
         removeFromCart,
@@ -769,13 +770,27 @@ const CartItem = ({ item }) => {
 
     const isAvailable = item.is_available;
     const isSelected = !!selectedItemIds[item.cart_item_id];
+    const minQuantity = parseInt(item.minimum_order_quantity || item.min_order_quantity || 1);
 
     const imageUrl = item.main_image_url ? `https://newapi.earn24.in${item.main_image_url}` : 'https://via.placeholder.com/150';
 
     const handleDecrease = () => {
         if (!isAvailable) return;
-        if (item.quantity <= 1) {
-            removeFromCart(item.cart_item_id);
+        if (item.quantity <= minQuantity) {
+            if (onRequireAlert) {
+                onRequireAlert({
+                    type: 'confirm',
+                    title: 'Remove Item?',
+                    message: `Minimum order quantity for this product is ${minQuantity}. Would you like to remove it from your basket?`,
+                    options: {
+                        confirmText: 'Remove',
+                        cancelText: 'Keep Item',
+                        onConfirm: () => removeFromCart(item.cart_item_id)
+                    }
+                });
+            } else {
+                removeFromCart(item.cart_item_id);
+            }
         } else {
             updateQuantity(item.cart_item_id, item.quantity - 1);
         }
@@ -806,6 +821,11 @@ const CartItem = ({ item }) => {
                 <View style={styles.itemInfo}>
                     <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
                     <Text style={styles.itemBrand}>{item.brand_name}</Text>
+                    {minQuantity > 1 && (
+                        <Text style={{ fontSize: 11, color: '#D97706', fontWeight: '600', marginTop: 2 }}>
+                            Min Order Qty: {minQuantity}
+                        </Text>
+                    )}
                     {isAvailable &&
                         <Text style={styles.bvText}>
                             Earn {(parseFloat(item.bv_earned || 0) * item.quantity).toFixed(2)} BV
@@ -845,6 +865,7 @@ const CartItem = ({ item }) => {
 // ==========================================================
 const CartScreen = ({ navigation }) => {
     const insets = useSafeAreaInsets();
+    const { showAlert, AlertModal } = useAlert();
     const {
         cartItems,
         subtotal,
@@ -857,6 +878,10 @@ const CartScreen = ({ navigation }) => {
     } = useCart();
 
     const isCheckoutDisabled = selectedItemsForCheckout.length === 0;
+
+    const handleCartItemAlert = ({ type, title, message, options }) => {
+        showAlert(type, title, message, options);
+    };
 
     const renderEmptyComponent = () => {
         if (isLoading) {
@@ -875,13 +900,19 @@ const CartScreen = ({ navigation }) => {
         <SafeAreaView style={styles.container}>
             <FlatList
                 data={cartItems}
-                renderItem={({ item }) => <CartItem item={item} />}
+                renderItem={({ item }) => <CartItem item={item} onRequireAlert={handleCartItemAlert} />}
                 keyExtractor={item => item.cart_item_id.toString()}
                 ListHeaderComponent={() => (
                     <View style={styles.headerContainer}>
                         <Text style={FONTS.h1}>My Basket</Text>
                         {cartItems.length > 0 && (
-                            <TouchableOpacity onPress={clearCart}>
+                            <TouchableOpacity onPress={() => {
+                                showAlert('confirm', 'Clear Basket?', 'Are you sure you want to remove all items from your basket?', {
+                                    confirmText: 'Clear All',
+                                    cancelText: 'Cancel',
+                                    onConfirm: clearCart
+                                });
+                            }}>
                                 <Text style={styles.clearButtonText}>Clear All</Text>
                             </TouchableOpacity>
                         )}
@@ -920,6 +951,7 @@ const CartScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
             )}
+            <AlertModal />
         </SafeAreaView>
     );
 };

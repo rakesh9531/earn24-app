@@ -72,7 +72,7 @@ const LocationHeader = ({ onPress }) => {
                 
                 {/* A row for the pincode and the chevron, to keep them together */}
                 <View style={styles.pincodeRow}>
-                    <Text style={styles.pincodeText}>{pincode || 'Select Pincode'}</Text>
+                    <Text style={styles.pincodeText}>{(!pincode || pincode === 'ALL') ? 'All India' : pincode}</Text>
                     <Icon name="chevron-down" size={16} color={COLORS.text} />
                 </View>
             </View>

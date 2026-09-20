@@ -169,10 +169,11 @@ import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Activ
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { addressService } from '../services/addressService';
 import { cartService } from '../services/cartService';
+import { useAuth } from '../context/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const AddressCard = ({ address, onSelect, isSelecting, mode }) => {
+const AddressCard = ({ address, onSelect, isSelecting, isAnySelecting, mode }) => {
     const navigation = useNavigation();
 
     const handleEdit = () => {
@@ -214,9 +215,9 @@ const AddressCard = ({ address, onSelect, isSelecting, mode }) => {
             {/* Only show the "Deliver" button if we are in 'checkout' mode */}
             {mode === 'checkout' && (
                 <TouchableOpacity
-                    style={[styles.deliverButton, isSelecting && styles.disabledButton]}
+                    style={[styles.deliverButton, isAnySelecting && styles.disabledButton]}
                     onPress={() => onSelect(address)}
-                    disabled={isSelecting}
+                    disabled={isAnySelecting}
                 >
                     {isSelecting ? <ActivityIndicator color="#fff" /> : <Text style={styles.deliverButtonText}>Deliver to this Address</Text>}
                 </TouchableOpacity>
@@ -229,6 +230,7 @@ const AddressListScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const insets = useSafeAreaInsets();
+    const { user, token } = useAuth();
 
     // --- THIS IS THE FIX ---
     // Check if params exist. If they do, we are in 'checkout' mode.
@@ -238,33 +240,49 @@ const AddressListScreen = () => {
 
     const [addresses, setAddresses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSelecting, setIsSelecting] = useState(false);
+    const [selectingAddressId, setSelectingAddressId] = useState(null);
 
     useFocusEffect(
         useCallback(() => {
             const loadAddresses = async () => {
+                if (!token) {
+                    setIsLoading(false);
+                    Alert.alert(
+                        "Login Required",
+                        "Please log in to view and select your delivery addresses.",
+                        [
+                            { text: "Cancel", style: "cancel" },
+                            { text: "Login", onPress: () => navigation.navigate('Login') }
+                        ]
+                    );
+                    return;
+                }
                 setIsLoading(true);
                 try {
                     const response = await addressService.getAddresses();
-                    if (response.status) {
-                        setAddresses(response.data);
+                    if (response && response.status) {
+                        setAddresses(response.data || []);
+                    } else {
+                        Alert.alert("Error", response?.message || "Could not load your addresses.");
                     }
                 } catch (error) {
-                    Alert.alert("Error", "Could not load your addresses.");
+                    console.error("loadAddresses error:", error);
+                    const errMsg = typeof error === 'string' ? error : (error?.message || "Could not load your addresses.");
+                    Alert.alert("Error", errMsg);
                 } finally {
                     setIsLoading(false);
                 }
             };
             loadAddresses();
             return () => { };
-        }, [])
+        }, [token, navigation])
     );
 
     const handleSelectAddress = async (selectedAddress) => {
         // This function is now only relevant in 'checkout' mode
         if (mode !== 'checkout') return;
 
-        setIsSelecting(true);
+        setSelectingAddressId(selectedAddress.id);
         try {
             const response = await cartService.validateForCheckout(selectedAddress.pincode, itemsForCheckout);
             if (response.status) {
@@ -290,7 +308,7 @@ const AddressListScreen = () => {
         } catch (error) {
             Alert.alert('Error', error.message || 'An error occurred while validating your cart.');
         } finally {
-            setIsSelecting(false);
+            setSelectingAddressId(null);
         }
     };
 
@@ -302,7 +320,15 @@ const AddressListScreen = () => {
         <SafeAreaView style={styles.container}>
             <FlatList
                 data={addresses}
-                renderItem={({ item }) => <AddressCard address={item} onSelect={handleSelectAddress} isSelecting={isSelecting} mode={mode} />}
+                renderItem={({ item }) => (
+                    <AddressCard 
+                        address={item} 
+                        onSelect={handleSelectAddress} 
+                        isSelecting={selectingAddressId === item.id} 
+                        isAnySelecting={selectingAddressId !== null}
+                        mode={mode} 
+                    />
+                )}
                 keyExtractor={item => item.id.toString()}
                 ListEmptyComponent={<View style={styles.centered}><Text>No addresses found. Please add one.</Text></View>}
                 contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}

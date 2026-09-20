@@ -110,7 +110,7 @@
 //       <ScrollView showsVerticalScrollIndicator={false}>
 //         <View style={styles.content}>
 //           <OfferBanner />
-          
+
 //           {homeData?.categories && homeData.categories.length > 0 &&
 //             <FlatList
 //               data={homeData.categories}
@@ -121,7 +121,7 @@
 //               style={styles.categoryList}
 //             />
 //           }
-          
+
 //           {homeData?.productSections?.map(section => (
 //             <ProductCarousel
 //                 key={section.id}
@@ -431,7 +431,7 @@
 //         }
 //       >
 //         <OfferBanner />
-        
+
 //         {homeData?.categories && homeData.categories.length > 0 &&
 //           <FlatList
 //             data={homeData.categories}
@@ -442,7 +442,7 @@
 //             contentContainerStyle={styles.categoryList}
 //           />
 //         }
-        
+
 //         {homeData?.productSections?.map(section => (
 //           <ProductCarousel
 //             key={section.id}
@@ -612,7 +612,7 @@
 // const HomeScreen = ({ navigation }) => {
 //   const { pincode, isLoadingPincode } = usePincode();
 //   const [isPincodeModalVisible, setIsPincodeModalVisible] = useState(false);
-  
+
 //   const [homeData, setHomeData] = useState(null);
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [error, setError] = useState('');
@@ -751,13 +751,13 @@ const HomeScreen = ({ navigation }) => {
   const { pincode, isLoadingPincode } = usePincode();
   const [isPincodeModalVisible, setIsPincodeModalVisible] = useState(false);
   const insets = useSafeAreaInsets();
-  
+
   const flatListRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   const isIos = Platform.OS === 'ios';
-  const tabHeight = isIos 
-    ? (insets.bottom > 0 ? 55 + insets.bottom : 65) 
+  const tabHeight = isIos
+    ? (insets.bottom > 0 ? 55 + insets.bottom : 65)
     : (insets.bottom > 0 ? 60 + insets.bottom : 65);
   const scrollTopBottom = tabHeight + 10 + 75; // dynamic offset above FloatingCartBar
 
@@ -769,7 +769,7 @@ const HomeScreen = ({ navigation }) => {
   const scrollToTop = () => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
-  
+
   const [homeData, setHomeData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -782,17 +782,16 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   const loadData = useCallback(async (currentPincode) => {
-    if (!currentPincode) return;
+    const activePin = currentPincode || '';
     setIsLoading(true);
     setError('');
     try {
-      const response = await mlmService.getHomeScreenData(currentPincode);
+      const response = await mlmService.getHomeScreenData(activePin);
       if (response && response.status) {
         setHomeData(response.data);
-        // --- SET THE FIRST CATEGORY AS THE DEFAULT SELECTION ---
         if (response.data.categories && response.data.categories.length > 0) {
-           const defaultCatId = response.data.categories[0].id;
-           setSelectedCategoryId(defaultCatId);
+          const defaultCatId = response.data.categories[0].id;
+          setSelectedCategoryId(defaultCatId);
         }
       } else {
         setError(response.message || "Failed to load data.");
@@ -805,29 +804,28 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    if (!isLoadingPincode && pincode) {
-      loadData(pincode);
+    if (!isLoadingPincode) {
+      loadData(pincode || '');
     }
   }, [pincode, isLoadingPincode, loadData]);
 
   useEffect(() => {
     navigation.setOptions({
-        headerTitle: () => <LocationHeader onPress={() => setIsPincodeModalVisible(true)} />,
-        headerRight: () => <View style={{ marginRight: 15 }}><CartIcon /></View>,
-        headerShadowVisible: false,
-        headerTitleAlign: 'left',
-        headerLeft: () => null,
-        headerStyle: { backgroundColor: 'white' }
+      headerTitle: () => <LocationHeader onPress={() => setIsPincodeModalVisible(true)} />,
+      headerRight: () => <View style={{ marginRight: 15 }}><CartIcon /></View>,
+      headerShadowVisible: false,
+      headerTitleAlign: 'left',
+      headerLeft: () => null,
+      headerStyle: { backgroundColor: 'white' }
     });
   }, [navigation]);
 
-  // --- FILTER THE "Best in..." LIST BASED ON THE SELECTION ---
   const filteredProductSections = useMemo(() => {
     if (!homeData?.productSections || !selectedCategoryId) {
-        return [];
+      return [];
     }
     const sections = homeData.productSections.filter(
-        section => section.parent_category_id === selectedCategoryId
+      section => section.parent_category_id === selectedCategoryId
     );
     return sections;
   }, [homeData, selectedCategoryId]);
@@ -841,9 +839,9 @@ const HomeScreen = ({ navigation }) => {
       key={item.id}
       section={item}
       onProductPress={(product) => navigation.navigate('ProductDetails', { product })}
-      onSeeAllPress={(s) => navigation.navigate('CategoryProducts', { 
-        categoryId: s.category_id || s.parent_category_id || selectedCategoryId, 
-        categoryName: s.title.replace('Best in ', '') 
+      onSeeAllPress={(s) => navigation.navigate('CategoryProducts', {
+        categoryId: s.category_id || s.parent_category_id || selectedCategoryId,
+        categoryName: s.title.replace('Best in ', '')
       })}
     />
   );
@@ -851,7 +849,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <PincodeModal
-        visible={!pincode || isPincodeModalVisible}
+        visible={isPincodeModalVisible}
         onDismiss={() => setIsPincodeModalVisible(false)}
       />
 
@@ -874,9 +872,9 @@ const HomeScreen = ({ navigation }) => {
             renderItem={renderProductCarousel}
             keyExtractor={(item) => item.id.toString()}
             ListHeaderComponent={
-              <HomeScreenHeader 
-                banners={homeData.banners} 
-                categories={homeData.categories} 
+              <HomeScreenHeader
+                banners={homeData.banners}
+                categories={homeData.categories}
                 navigation={navigation}
                 selectedCategoryId={selectedCategoryId}
                 onCategorySelect={handleCategorySelect}
@@ -901,31 +899,31 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  sectionHeaderContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  sectionHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 20,
-    marginBottom: 15, 
-    paddingHorizontal: 20 
+    marginBottom: 15,
+    paddingHorizontal: 20
   },
-  sectionHeaderTitle: { 
-    fontSize: 18, 
+  sectionHeaderTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#111'
   },
-  sectionHeaderSeeAll: { 
-    color: '#0CA201', 
-    fontWeight: 'bold' 
+  sectionHeaderSeeAll: {
+    color: '#0CA201',
+    fontWeight: 'bold'
   },
-  gridRowContainer: { 
-    flexDirection: 'row', 
-    paddingHorizontal: 15, 
-    justifyContent: 'space-between' 
+  gridRowContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 15,
+    justifyContent: 'space-between'
   },
-  gridRowItem: { 
+  gridRowItem: {
     width: '48%',
-    marginBottom: 15 
+    marginBottom: 15
   },
   gridRowItemPlaceholder: {
     width: '48%',

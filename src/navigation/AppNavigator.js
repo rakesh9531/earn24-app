@@ -179,6 +179,7 @@ import FavouriteScreen from '../screens/FavouriteScreen';
 import MyRewardsScreen from '../screens/MyRewardsScreen';
 import KYCVerificationScreen from '../screens/KYCVerificationScreen';
 import WithdrawalScreen from '../screens/WithdrawalScreen';
+import PayUScreen from '../screens/PayUScreen';
 
 
 // A simple placeholder for unfinished tabs
@@ -235,7 +236,7 @@ function MainTabs() {
       <Tab.Screen
         name="Search"
         component={SearchScreen}
-        options={{ headerShown: true, title: 'Search' }}
+        options={{ headerShown: false }}
       />
       <Tab.Screen
         name="Favourite"
@@ -343,17 +344,12 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ProductDetails"
         component={ProductDetailsScreen}
-        options={({ route }) => ({
-          title: route.params.product.name,
-          headerBackTitle: 'Back',
-        })}
+        options={{ title: 'Product Details' }}
       />
       <Stack.Screen
         name="SearchResults"
         component={SearchResultsScreen}
-        options={({ route }) => ({
-          title: `Results for "${route.params.query}"`,
-        })}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Filter"
@@ -386,6 +382,11 @@ const AppNavigator = () => {
         name="Withdrawal"
         component={WithdrawalScreen}
         options={{ title: 'Request Withdrawal' }}
+      />
+      <Stack.Screen
+        name="PayU"
+        component={PayUScreen}
+        options={{ headerShown: false }}
       />
 
 
