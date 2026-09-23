@@ -150,135 +150,136 @@ const ProductCard = ({ product, onPress }) => {
 const styles = StyleSheet.create({
   cardContainer: {
     flex: 1,
-    margin: 6,
-    backgroundColor: '#fff',
+    margin: 5,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
   },
   imageContainer: {
+    width: '100%',
+    height: 110,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
     position: 'relative',
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 11,
-    borderTopRightRadius: 11,
   },
   productImage: {
-    width: '100%',
-    height: 135, // Increased from 120 to make it slightly bigger
+    width: '85%',
+    height: '85%',
     alignSelf: 'center',
   },
   cardContent: {
-    padding: 8, // Reduced from 12
+    padding: 8,
     flex: 1,
     justifyContent: 'space-between',
   },
   brandName: {
-    fontSize: 11, // Reduced from 12
-    color: '#6c757d',
-    marginBottom: 0, // Reduced from 2
+    fontSize: 10,
+    color: '#94A3B8',
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   productName: {
-    fontSize: 13, // Reduced from 14
+    fontSize: 12,
     fontWeight: '600',
-    color: '#343a40',
-    marginBottom: 2, // Added to provide minimal spacing instead of fixed minHeight
+    color: '#1E293B',
+    marginTop: 2,
+    height: 32,
+    lineHeight: 16,
   },
-
   attributeText: {
-    fontSize: 11, // Reduced from 12
-    color: '#57595e',
-    marginTop: 0,
-    marginBottom: 2, // Reduced spacing
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 2,
     fontWeight: '400',
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 2,
-    marginBottom: 2,
   },
   ratingBadge: {
     backgroundColor: '#059669',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 6,
+    marginRight: 4,
   },
   ratingBadgeText: {
-    color: '#ffffff',
-    fontSize: 11,
+    color: '#FFFFFF',
+    fontSize: 10,
     fontWeight: 'bold',
   },
   reviewCountText: {
-    fontSize: 10,
-    color: '#6c757d',
+    fontSize: 9,
+    color: '#94A3B8',
     fontWeight: '500',
   },
-
   bvText: {
-    fontSize: 11, // Reduced from 12
-    fontWeight: '500',
-    color: '#007bff',
-    marginTop: 2, // Reduced spacing
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+    marginTop: 2,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 4, // Reduced spacing
+    marginTop: 6,
   },
   priceInfo: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
   sellingPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2a9d8f',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
   },
   mrp: {
-    fontSize: 12,
-    color: '#6c757d',
+    fontSize: 11,
+    color: '#94A3B8',
     textDecorationLine: 'line-through',
+    marginLeft: 4,
   },
   addButton: {
-    backgroundColor: '#0CA201',
-    width: 32, // Reduced from 40
-    height: 32, // Reduced from 40
-    borderRadius: 16, // Reduced from 20
+    backgroundColor: '#059669',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
+    elevation: 2,
   },
   // --- GENERIC BADGE STYLE ---
   badge: {
     position: 'absolute',
-    top: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    top: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   badgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
   },
-  // --- SPECIFIC BADGE STYLES ---
   discountBadge: {
-    left: -8,
-    top: -10,
-    backgroundColor: '#0CA201', // Red/Orange for discount
+    left: 6,
+    backgroundColor: '#DC2626',
   },
   moqBadge: {
-    right: 3,
-    top: -10,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    right: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
   },
   favoriteButton: {
     position: 'absolute',
@@ -286,14 +287,14 @@ const styles = StyleSheet.create({
     right: 6,
     zIndex: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },

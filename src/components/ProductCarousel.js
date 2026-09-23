@@ -9,16 +9,24 @@ const ProductCarousel = ({ section, onProductPress, onSeeAllPress }) => {
     return null;
   }
 
+  // Display only Top 4 products on the Home Screen for speed and clean layout
+  const displayProducts = section.products.slice(0, 4);
+
   return (
     <View style={styles.sectionContainer}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{section.title}</Text>
-        <TouchableOpacity onPress={() => onSeeAllPress(section)}>
-          <Text style={styles.seeAll}>See all</Text>
+        <TouchableOpacity
+          style={styles.seeAllBtn}
+          onPress={() => onSeeAllPress(section)}
+          activeOpacity={0.8}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.seeAll}>See all &gt;</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.gridContainer}>
-        {section.products.map((item, index) => {
+        {displayProducts.map((item, index) => {
           if (!item) return null;
           return (
             <View key={item.offer_id ? item.offer_id.toString() : (item.id ? item.id.toString() : index.toString())} style={styles.gridItem}>

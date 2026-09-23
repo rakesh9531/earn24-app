@@ -746,6 +746,7 @@ import PincodeModal from '../components/PincodeModal';
 import { usePincode } from '../context/PincodeContext';
 import LocationHeader from '../components/LocationHeader';
 import HomeScreenHeader from '../components/HomeScreenHeader';
+import HomeSearchBar from '../components/HomeSearchBar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getFavoriteCategoryId } from '../services/userAffinityService';
 
@@ -877,6 +878,9 @@ const HomeScreen = ({ navigation }) => {
         </View>
       ) : homeData && (
         <>
+          {/* --- STICKY TOP SEARCH BAR (ALWAYS ACCESSIBLE WHILE SCROLLING) --- */}
+          <HomeSearchBar navigation={navigation} />
+
           <FlatList
             ref={flatListRef}
             onScroll={handleScroll}

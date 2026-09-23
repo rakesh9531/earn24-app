@@ -182,6 +182,8 @@ import WithdrawalScreen from '../screens/WithdrawalScreen';
 import PayUScreen from '../screens/PayUScreen';
 
 
+import CategoriesScreen from '../screens/CategoriesScreen';
+
 // A simple placeholder for unfinished tabs
 const PlaceholderScreen = ({ route }) => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -218,10 +220,10 @@ function MainTabs() {
           let iconName;
           if (route.name === 'Home')
             iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === 'Categories')
+            iconName = focused ? 'grid' : 'grid-outline';
           else if (route.name === 'Favourite')
             iconName = focused ? 'heart' : 'heart-outline';
-          else if (route.name === 'Search')
-            iconName = focused ? 'search' : 'search-outline';
           else if (route.name === 'Profile')
             iconName = focused ? 'person' : 'person-outline';
           return <Icon name={iconName} size={size} color={color} />;
@@ -234,8 +236,8 @@ function MainTabs() {
         options={{ headerShown: true }}
       />
       <Tab.Screen
-        name="Search"
-        component={SearchScreen}
+        name="Categories"
+        component={CategoriesScreen}
         options={{ headerShown: false }}
       />
       <Tab.Screen
@@ -345,6 +347,11 @@ const AppNavigator = () => {
         name="ProductDetails"
         component={ProductDetailsScreen}
         options={{ title: 'Product Details' }}
+      />
+      <Stack.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="SearchResults"

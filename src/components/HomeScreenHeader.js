@@ -1166,10 +1166,7 @@ const HomeScreenHeader = ({
 
   return (
     <View style={{ backgroundColor: '#FFFFFF' }}>
-      {/* --- 1. FLIPKART-STYLE TOP SEARCH BAR --- */}
-      <HomeSearchBar navigation={navigation} />
-
-      {/* --- 2. BANNERS CAROUSEL --- */}
+      {/* --- 1. BANNERS CAROUSEL --- */}
       {(!banners || banners.length === 0) ? (
         <View style={[styles.slide, { paddingTop: 10, paddingBottom: 10 }]}>
           <View style={[styles.bannerContainer, styles.skeletonBanner]} />
@@ -1205,16 +1202,7 @@ const HomeScreenHeader = ({
         </Swiper>
       )}
 
-      {/* --- 3. HIGH BV & SUPER SAVER DEALS (Earn24 Core Highlight) --- */}
-      <HighBvDealsSection topBvDeals={topBvDeals} productSections={productSections} navigation={navigation} />
-
-      {/* --- 4. BUY AGAIN SECTION (Re-order Past Delivered Items) --- */}
-      <BuyAgainSection navigation={navigation} refreshKey={refreshKey} />
-
-      {/* --- 5. RECENTLY VIEWED SECTION (Smart Local Memory) --- */}
-      <RecentlyViewedSection navigation={navigation} refreshKey={refreshKey} />
-
-      {/* --- 6. CATEGORIES SECTION WITH PARENT AND SUB-CATEGORIES --- */}
+      {/* --- 2. CATEGORIES SECTION WITH PARENT AND SUB-CATEGORIES (PLACED RIGHT BELOW BANNERS) --- */}
       <View style={styles.categoriesSection}>
         <Text style={styles.sectionTitle}>Shop by Category</Text>
 
@@ -1240,6 +1228,15 @@ const HomeScreenHeader = ({
           />
         )}
       </View>
+
+      {/* --- 3. HIGH BV & SUPER SAVER DEALS (Earn24 Core Highlight) --- */}
+      <HighBvDealsSection topBvDeals={topBvDeals} productSections={productSections} navigation={navigation} />
+
+      {/* --- 4. BUY AGAIN SECTION (Re-order Past Delivered Items) --- */}
+      <BuyAgainSection navigation={navigation} refreshKey={refreshKey} />
+
+      {/* --- 5. RECENTLY VIEWED SECTION (Smart Local Memory) --- */}
+      <RecentlyViewedSection navigation={navigation} refreshKey={refreshKey} />
     </View>
   );
 };
