@@ -284,7 +284,13 @@ const ProductDetailsScreen = () => {
   const insets = useSafeAreaInsets();
   const favContext = useFavorites();
 
-  const product = fetchedProduct ? { ...rawProduct, ...fetchedProduct } : (rawProduct || {});
+  const product = fetchedProduct ? { 
+    ...rawProduct, 
+    ...fetchedProduct,
+    variants: (Array.isArray(fetchedProduct.variants) && fetchedProduct.variants.length > 0)
+      ? fetchedProduct.variants
+      : (Array.isArray(rawProduct?.variants) && rawProduct.variants.length > 0 ? rawProduct.variants : (fetchedProduct?.variants || rawProduct?.variants || []))
+  } : (rawProduct || {});
   const currentProductId = product.product_id || product.id;
   const currentOfferId = rawProduct?.offer_id || rawProduct?.seller_product_id || rawProduct?.sp_id || product?.offer_id || product?.seller_product_id || product?.sp_id;
 
