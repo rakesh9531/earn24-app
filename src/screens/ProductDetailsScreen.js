@@ -286,6 +286,7 @@ const ProductDetailsScreen = () => {
 
   const product = fetchedProduct ? { ...rawProduct, ...fetchedProduct } : (rawProduct || {});
   const currentProductId = product.product_id || product.id;
+  const currentOfferId = rawProduct?.offer_id || rawProduct?.seller_product_id || rawProduct?.sp_id || product?.offer_id || product?.seller_product_id || product?.sp_id;
 
   // --- STATE (Declared Unconditionally at Top Level) ---
   const minOrderQty = parseInt(product.minimum_order_quantity || 1, 10) || 1;
@@ -479,10 +480,18 @@ const ProductDetailsScreen = () => {
     const fetchFullProduct = async () => {
       if (!currentProductId) return;
       try {
-        const res = await getProductById(currentProductId);
-        console.log('[ProductDetailsScreen DEBUG fetchFullProduct]:', currentProductId, res?.data);
+        const res = await getProductById(currentProductId, false, currentOfferId);
+        console.log('[ProductDetailsScreen DEBUG fetchFullProduct]:', currentProductId, currentOfferId, res?.data);
         if (res && res.status && res.data) {
           setFetchedProduct(res.data);
+          recordProductView({
+            ...product,
+            ...res.data,
+            id: currentProductId,
+            product_id: currentProductId,
+            offer_id: currentOfferId || res.data.offer_id || res.data.seller_product_id,
+            seller_product_id: currentOfferId || res.data.seller_product_id || res.data.offer_id,
+          });
         }
       } catch (e) {
         console.error('Failed to fetch full product details:', e);
@@ -490,7 +499,7 @@ const ProductDetailsScreen = () => {
     };
 
     if (currentProductId) {
-      recordProductView({ ...product, id: currentProductId, product_id: currentProductId });
+      recordProductView({ ...product, id: currentProductId, product_id: currentProductId, offer_id: currentOfferId });
       fetchFullProduct();
       fetchRelated();
       fetchReviews();
@@ -498,7 +507,7 @@ const ProductDetailsScreen = () => {
       setIsRelatedLoading(false);
     }
 
-  }, [currentProductId, pincode, product.name, navigation, isFav]);
+  }, [currentProductId, currentOfferId, pincode, product.name, navigation, isFav]);
 
   const handleAddToCart = async () => {
     if (isAddingToCart || isBuyingNow) return;
@@ -755,8 +764,11 @@ const ProductDetailsScreen = () => {
             const rawReplacement = (product.is_replacement_available !== null && product.is_replacement_available !== undefined) ? product.is_replacement_available : product.subcat_is_replacement_available;
             const replacementDays = parseInt(product.replacement_window_days || product.subcat_replacement_window_days || 7, 10);
 
-            const hasReturn = (rawReturn === 1 || rawReturn === true || rawReturn === '1' || rawReturn === 'true');
-            const hasReplacement = (rawReplacement === 1 || rawReplacement === true || rawReplacement === '1' || rawReplacement === 'true');
+            const isExplicitNoReturn = (rawReturn === 0 || rawReturn === false || rawReturn === '0' || rawReturn === 'false');
+            const hasReturn = !isExplicitNoReturn && (rawReturn === 1 || rawReturn === true || rawReturn === '1' || rawReturn === 'true' || rawReturn === undefined || rawReturn === null);
+
+            const isExplicitNoReplacement = (rawReplacement === 0 || rawReplacement === false || rawReplacement === '0' || rawReplacement === 'false');
+            const hasReplacement = !isExplicitNoReplacement && (rawReplacement === 1 || rawReplacement === true || rawReplacement === '1' || rawReplacement === 'true' || rawReplacement === undefined || rawReplacement === null);
 
             return (
               <View style={styles.trustCard}>

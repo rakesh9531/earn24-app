@@ -57,12 +57,12 @@ const getSearchSuggestions = async (query) => {
 
 
 
-const getProductById = async (productId, isSellerProduct = false) => {
+const getProductById = async (productId, isSellerProduct = false, offerId = null) => {
     try {
-        // This now calls the new, public endpoint
-        const response = await api.get(`/products/${productId}`, {
-            params: isSellerProduct ? { is_seller_product: 1 } : {}
-        });
+        const params = {};
+        if (isSellerProduct) params.is_seller_product = 1;
+        if (offerId) params.offer_id = offerId;
+        const response = await api.get(`/products/${productId}`, { params });
         return response.data;
     } catch (error) {
         console.error(`API Error fetching product ${productId}:`, error.response?.data || error.message);

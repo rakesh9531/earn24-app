@@ -20,7 +20,7 @@ export const recordProductView = async (product) => {
     // Filter out if item already exists to move it to the front
     existingList = existingList.filter((item) => String(item.id || item.product_id) !== String(productId));
 
-    // Store only necessary properties to keep storage lightweight
+    // Store properties to keep storage lightweight while preserving offer, warranty, and return policies
     const simplifiedProduct = {
       id: productId,
       product_id: productId,
@@ -34,6 +34,27 @@ export const recordProductView = async (product) => {
       attributes: product.attributes,
       parent_category_id: product.parent_category_id || product.category_id,
       category_id: product.category_id,
+      // Specific seller offer tracking
+      offer_id: product.offer_id || product.seller_product_id || product.sp_id,
+      seller_product_id: product.seller_product_id || product.offer_id || product.sp_id,
+      seller_name: product.seller_name || product.merchant_business_name,
+      // Warranty specifications
+      warranty_type: product.warranty_type,
+      warranty_period: product.warranty_period,
+      warranty_months: product.warranty_months,
+      warranty_covered_by: product.warranty_covered_by,
+      warranty_service_type: product.warranty_service_type,
+      warranty_summary: product.warranty_summary,
+      // Return & Replacement policies
+      has_return_policy: product.has_return_policy,
+      return_window_days: product.return_window_days,
+      is_replacement_available: product.is_replacement_available,
+      replacement_window_days: product.replacement_window_days,
+      subcat_has_return_policy: product.subcat_has_return_policy,
+      subcat_return_window_days: product.subcat_return_window_days,
+      subcat_is_replacement_available: product.subcat_is_replacement_available,
+      subcat_replacement_window_days: product.subcat_replacement_window_days,
+      description: product.description,
     };
 
     // Prepend to top
