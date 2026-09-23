@@ -1230,7 +1230,13 @@ const HomeScreenHeader = ({
       </View>
 
       {/* --- 3. HIGH BV & SUPER SAVER DEALS (Earn24 Core Highlight) --- */}
-      <HighBvDealsSection topBvDeals={topBvDeals} productSections={productSections} navigation={navigation} />
+      <HighBvDealsSection
+        topBvDeals={topBvDeals}
+        productSections={productSections}
+        navigation={navigation}
+        selectedCategoryId={selectedCategoryId}
+        categories={categories}
+      />
 
       {/* --- 4. BUY AGAIN SECTION (Re-order Past Delivered Items) --- */}
       <BuyAgainSection navigation={navigation} refreshKey={refreshKey} />

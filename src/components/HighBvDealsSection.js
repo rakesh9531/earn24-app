@@ -77,20 +77,83 @@ const HighBvCard = memo(({ item, onPress, onAddToCart, isAdding }) => {
   );
 });
 
-const HighBvDealsSection = ({ topBvDeals, productSections, navigation }) => {
+const HighBvDealsSection = ({ topBvDeals, productSections, navigation, selectedCategoryId, categories }) => {
   const [addingId, setAddingId] = useState(null);
   const { addToCart } = useCart();
   const { token } = useAuth();
 
-  const topDeals = useMemo(() => {
-    // 1. If backend provided top BV deals directly from database query, use them immediately (Zero computation!)
-    if (Array.isArray(topBvDeals) && topBvDeals.length > 0) {
-      return topBvDeals;
+  const activeCategory = useMemo(() => {
+    if (!selectedCategoryId || !Array.isArray(categories)) return null;
+    return categories.find(c => c.id === selectedCategoryId);
+  }, [selectedCategoryId, categories]);
+
+  const { deals, isCategorySpecific } = useMemo(() => {
+    // 1. If a category is selected, collect matching products from topBvDeals & productSections
+    if (selectedCategoryId) {
+      const matchedProducts = [];
+      const seenIds = new Set();
+
+      // Check topBvDeals for items matching this category
+      if (Array.isArray(topBvDeals)) {
+        for (const item of topBvDeals) {
+          const itemCatId = item.category_id || item.parent_category_id;
+          if (itemCatId === selectedCategoryId) {
+            const pid = item.id || item.product_id;
+            if (pid && !seenIds.has(pid)) {
+              seenIds.add(pid);
+              matchedProducts.push(item);
+            }
+          }
+        }
+      }
+
+      // Check productSections for this category
+      if (Array.isArray(productSections)) {
+        for (const section of productSections) {
+          if (section.parent_category_id === selectedCategoryId || section.id === selectedCategoryId) {
+            if (Array.isArray(section.products)) {
+              for (const prod of section.products) {
+                const pid = prod.id || prod.product_id;
+                if (pid && !seenIds.has(pid)) {
+                  seenIds.add(pid);
+                  matchedProducts.push(prod);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Sort matched products: Highest BV first, then highest discount
+      matchedProducts.sort((a, b) => {
+        const bvA = parseFloat(a.bv_earned || 0);
+        const bvB = parseFloat(b.bv_earned || 0);
+        if (bvB !== bvA) return bvB - bvA;
+
+        const mrpA = parseFloat(a.mrp || 0);
+        const spA = parseFloat(a.selling_price || 0);
+        const discA = mrpA > spA ? (mrpA - spA) / mrpA : 0;
+
+        const mrpB = parseFloat(b.mrp || 0);
+        const spB = parseFloat(b.selling_price || 0);
+        const discB = mrpB > spB ? (mrpB - spB) / mrpB : 0;
+
+        return discB - discA;
+      });
+
+      // If category has at least 2 deals, use them!
+      if (matchedProducts.length >= 2) {
+        return { deals: matchedProducts.slice(0, 25), isCategorySpecific: true };
+      }
     }
 
-    // 2. Fallback: extract from productSections if backend did not provide topBvDeals
+    // 2. Global fallback: topBvDeals or sorted productSections across whole store
+    if (Array.isArray(topBvDeals) && topBvDeals.length > 0) {
+      return { deals: topBvDeals.slice(0, 25), isCategorySpecific: false };
+    }
+
     if (!Array.isArray(productSections) || productSections.length === 0) {
-      return [];
+      return { deals: [], isCategorySpecific: false };
     }
 
     const allProducts = [];
@@ -108,7 +171,6 @@ const HighBvDealsSection = ({ topBvDeals, productSections, navigation }) => {
       }
     }
 
-    // Sort by highest BV first, then highest discount
     const sorted = allProducts.sort((a, b) => {
       const bvA = parseFloat(a.bv_earned || 0);
       const bvB = parseFloat(b.bv_earned || 0);
@@ -125,8 +187,8 @@ const HighBvDealsSection = ({ topBvDeals, productSections, navigation }) => {
       return discB - discA;
     });
 
-    return sorted.slice(0, 25);
-  }, [topBvDeals, productSections]);
+    return { deals: sorted.slice(0, 25), isCategorySpecific: false };
+  }, [selectedCategoryId, topBvDeals, productSections]);
 
   const handleAddToCart = async (product) => {
     if (addingId) return;
@@ -149,16 +211,25 @@ const HighBvDealsSection = ({ topBvDeals, productSections, navigation }) => {
     }
   };
 
-  if (!topDeals || topDeals.length === 0) {
+  if (!deals || deals.length === 0) {
     return null;
   }
+
+  const categoryName = activeCategory?.name;
+  const sectionTitle = (isCategorySpecific && categoryName)
+    ? `Top Deals in ${categoryName}`
+    : 'Top BV & Super Deals';
+  const sectionSubtitle = (isCategorySpecific && categoryName)
+    ? `Best savings & high BV on ${categoryName}`
+    : 'Maximum earnings & highest discounts';
 
   const handleSeeAll = () => {
     if (navigation && typeof navigation.navigate === 'function') {
       navigation.navigate('CategoryProducts', {
         isTopBv: true,
-        categoryName: 'Top BV & Super Deals',
-        dealsList: topDeals,
+        categoryName: sectionTitle,
+        dealsList: deals,
+        categoryId: isCategorySpecific ? selectedCategoryId : undefined,
       });
     }
   };
@@ -171,8 +242,8 @@ const HighBvDealsSection = ({ topBvDeals, productSections, navigation }) => {
             <Icon name="diamond" size={14} color="#FFFFFF" />
           </View>
           <View style={{ marginLeft: 8 }}>
-            <Text style={styles.sectionTitle}>Top BV & Super Deals</Text>
-            <Text style={styles.sectionSubtitle}>Maximum earnings & highest discounts</Text>
+            <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+            <Text style={styles.sectionSubtitle}>{sectionSubtitle}</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -184,7 +255,7 @@ const HighBvDealsSection = ({ topBvDeals, productSections, navigation }) => {
       </View>
 
       <FlatList
-        data={topDeals}
+        data={deals}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
@@ -251,8 +322,8 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   card: {
-    width: 140,
-    marginRight: 12,
+    width: 130,
+    marginRight: 10,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
@@ -266,7 +337,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 110,
+    height: 100,
     backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
