@@ -105,6 +105,54 @@ const VerticalTimelineTracker = ({ order }) => {
     );
 };
 
+// --- Helper to get formatted status, badge colors, and label for each order fulfillment step ---
+const getOrderStatusInfo = (order) => {
+    if (!order) return { label: 'CONFIRMED', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+
+    const rawStatus = (order.orderStatus || order.order_status || 'CONFIRMED').toUpperCase();
+    const retStatus = (order.return_status || order.returnStatus || '').toUpperCase();
+    const isReturnActive = retStatus && !['CLOSED', 'REJECTED'].includes(retStatus);
+
+    if (isReturnActive) {
+        const isRep = (order.return_type || order.returnType || '').toUpperCase() === 'REPLACEMENT';
+        if (retStatus === 'PICKUP_ASSIGNED') {
+            return { label: 'PICKUP ASSIGNED', bg: '#F3E8FF', color: '#7E22CE', border: '#E9D5FF' };
+        } else if (retStatus === 'PICKED_UP' || retStatus === 'IN_TRANSIT_TO_HUB') {
+            return { label: 'ITEM PICKED UP', bg: '#CCFBF1', color: '#0F766E', border: '#99F6E4' };
+        } else if (retStatus === 'RECEIVED_AT_HUB') {
+            return { label: 'AT WAREHOUSE', bg: '#E0E7FF', color: '#3730A3', border: '#C7D2FE' };
+        } else if (['APPROVED', 'COMPLETED', 'REFUNDED'].includes(retStatus)) {
+            return isRep 
+                ? { label: 'REPLACEMENT COMPLETED', bg: '#DCFCE7', color: '#15803D', border: '#86EFAC' }
+                : { label: 'REFUND COMPLETED', bg: '#DCFCE7', color: '#15803D', border: '#86EFAC' };
+        } else if (retStatus === 'REPLACEMENT_DISPATCHED') {
+            return { label: 'REPLACEMENT ON THE WAY', bg: '#F0FDF4', color: '#059669', border: '#BBF7D0' };
+        } else {
+            return { label: isRep ? 'REPLACEMENT PENDING' : 'RETURN PENDING', bg: '#FEF3C7', color: '#B45309', border: '#FDE68A' };
+        }
+    }
+
+    switch (rawStatus) {
+        case 'DELIVERED':
+            return { label: 'DELIVERED', bg: '#DCFCE7', color: '#15803D', border: '#86EFAC' };
+        case 'OUT_FOR_DELIVERY':
+            return { label: 'OUT FOR DELIVERY', bg: '#FFF7ED', color: '#EA580C', border: '#FED7AA' };
+        case 'SHIPPED':
+        case 'DISPATCHED':
+            return { label: 'SHIPPED', bg: '#F5F3FF', color: '#7C3AED', border: '#DDD6FE' };
+        case 'CANCELLED':
+            return { label: 'CANCELLED', bg: '#FEE2E2', color: '#DC2626', border: '#FECACA' };
+        case 'PROCESSING':
+            return { label: 'PROCESSING', bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' };
+        case 'PENDING_PAYMENT':
+            return { label: 'PENDING PAYMENT', bg: '#FEF3C7', color: '#B45309', border: '#FDE68A' };
+        case 'CONFIRMED':
+        case 'PENDING':
+        default:
+            return { label: 'ORDER CONFIRMED', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+    }
+};
+
 // --- The Main Order Details Screen Component ---
 const OrderDetailsScreen = () => {
     const navigation = useNavigation();
@@ -485,7 +533,11 @@ const OrderDetailsScreen = () => {
         }];
     }
 
-    const isPaid = (order.paymentStatus || '').toUpperCase() === 'PAID' || (order.paymentStatus || '').toUpperCase() === 'SUCCESS' || (order.paymentMethod || '').toUpperCase() === 'WALLET';
+    const isPaid = (order.paymentStatus || '').toUpperCase() === 'PAID' || 
+                   (order.paymentStatus || '').toUpperCase() === 'SUCCESS' || 
+                   (order.paymentMethod || '').toUpperCase() === 'WALLET' ||
+                   (order.orderStatus || '').toUpperCase() === 'DELIVERED';
+    const orderStatusInfo = getOrderStatusInfo(order);
     const unlockDateStr = moment(order.deliveredAt || order.updatedAt || order.createdAt).add(order.returnWindowDays || 7, 'days').format('D MMM YYYY');
 
     return (
@@ -698,9 +750,9 @@ const OrderDetailsScreen = () => {
                 <View style={styles.section}>
                     <View style={styles.headerRow}>
                         <Text style={styles.orderIdText}>Order ID: {order.orderNumber}</Text>
-                        <View style={[styles.paymentBadge, isPaid ? styles.paidBadge : styles.pendingBadge]}>
-                            <Text style={[styles.paymentBadgeText, isPaid ? styles.paidText : styles.pendingText]}>
-                                {isPaid ? 'PAID' : 'PENDING'}
+                        <View style={[styles.orderStatusBadge, { backgroundColor: orderStatusInfo.bg, borderColor: orderStatusInfo.border }]}>
+                            <Text style={[styles.orderStatusBadgeText, { color: orderStatusInfo.color }]}>
+                                {orderStatusInfo.label}
                             </Text>
                         </View>
                     </View>
@@ -821,6 +873,14 @@ const OrderDetailsScreen = () => {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Payment Summary</Text>
                     <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Payment Method</Text><Text style={[styles.summaryValue, { fontWeight: '700' }]}>{order.paymentMethod || 'ONLINE'}</Text></View>
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Payment Status</Text>
+                        <View style={[styles.paymentBadge, isPaid ? styles.paidBadge : styles.pendingBadge]}>
+                            <Text style={[styles.paymentBadgeText, isPaid ? styles.paidText : styles.pendingText]}>
+                                {isPaid ? 'PAID' : (order.paymentMethod === 'COD' ? 'PAY ON DELIVERY' : 'PENDING')}
+                            </Text>
+                        </View>
+                    </View>
                     <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Subtotal</Text><Text style={styles.summaryValue}>₹{parseFloat(order.subtotal || 0).toFixed(2)}</Text></View>
                     <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Delivery Fee</Text><Text style={styles.summaryValue}>₹{parseFloat(order.deliveryFee || 0).toFixed(2)}</Text></View>
                     <View style={styles.totalRow}><Text style={styles.totalLabel}>Grand Total</Text><Text style={styles.totalValue}>₹{parseFloat(order.totalAmount || 0).toFixed(2)}</Text></View>
@@ -1667,6 +1727,21 @@ const styles = StyleSheet.create({
     stepTitleCompleted: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
     stepTime: { fontSize: 11, color: '#94A3B8' },
     stepDescription: { fontSize: 12, color: '#64748B', marginTop: 2, lineHeight: 16 },
+
+    // Order Fulfillment Status Badge (Top Right of Tracking Card)
+    orderStatusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    orderStatusBadgeText: {
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.3,
+    },
 
     // Payment Badges
     paymentBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
