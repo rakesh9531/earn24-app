@@ -182,6 +182,29 @@ const OrderDetailsScreen = () => {
     const [isTrackingModalVisible, setIsTrackingModalVisible] = useState(false);
     const [selectedTrackingReturn, setSelectedTrackingReturn] = useState(null);
 
+    // --- Individual Item Delivery Tracking States ---
+    const [isItemTrackingModalVisible, setIsItemTrackingModalVisible] = useState(false);
+    const [selectedTrackingItem, setSelectedTrackingItem] = useState(null);
+
+    const handleOpenItemTrackingModal = (item) => {
+        setSelectedTrackingItem(item);
+        setIsItemTrackingModalVisible(true);
+    };
+
+    const handleOpenCourierLink = (awb, courier) => {
+        if (!awb) return;
+        const cLower = (courier || '').toLowerCase();
+        let url = `https://www.google.com/search?q=${encodeURIComponent((courier || 'courier') + ' tracking ' + awb)}`;
+        if (cLower.includes('shiprocket')) {
+            url = `https://shiprocket.co/tracking/${awb}`;
+        } else if (cLower.includes('delhivery')) {
+            url = `https://www.delhivery.com/track/package/${awb}`;
+        } else if (cLower.includes('bluedart')) {
+            url = `https://www.bluedart.com/tracking?handler=tnt&action=custsheet&trackid=${awb}`;
+        }
+        Linking.openURL(url).catch(() => {});
+    };
+
     const handleOpenTrackingModal = (retItem) => {
         setSelectedTrackingReturn(retItem);
         setIsTrackingModalVisible(true);
@@ -829,26 +852,51 @@ const OrderDetailsScreen = () => {
                                 </Text>
                             </TouchableOpacity>
 
-                            {item.itemStatus !== 'CANCELLED' && ['PENDING', 'PENDING_PAYMENT', 'CONFIRMED', 'PROCESSING'].includes(order.orderStatus) && (
-                                <TouchableOpacity
-                                    style={styles.cancelItemBtn}
-                                    onPress={() => handleCancelItem(item)}
-                                    disabled={isCancelling}
-                                >
-                                    <Icon name="close-circle-outline" size={16} color="#DC2626" />
-                                    <Text style={styles.cancelItemBtnText}>Cancel Item</Text>
-                                </TouchableOpacity>
-                            )}
+                            {/* Origin / Dispatched Location Badge */}
+                            {(item.sellerCity || item.sellerState || item.sellerName) ? (
+                                <View style={styles.itemOriginRow}>
+                                    <Icon name="location-outline" size={13} color="#0D9488" />
+                                    <Text style={styles.itemOriginText} numberOfLines={1}>
+                                        Dispatched from: <Text style={{ fontWeight: '700', color: '#0F766E' }}>{item.sellerCity ? `${item.sellerCity}${item.sellerState ? ', ' + item.sellerState : ''}` : (item.sellerState || 'Merchant Hub')}</Text>
+                                        {item.sellerName ? ` • ${item.sellerName}` : ''}
+                                    </Text>
+                                </View>
+                            ) : null}
 
-                            {order.orderStatus === 'DELIVERED' && item.itemStatus !== 'CANCELLED' && (
-                                <TouchableOpacity
-                                    style={styles.rateProductBtn}
-                                    onPress={() => handleOpenReviewModal(item)}
-                                >
-                                    <Icon name="star" size={14} color="#F59E0B" />
-                                    <Text style={styles.rateProductBtnText}>Rate & Review Product</Text>
-                                </TouchableOpacity>
-                            )}
+                            {/* Item Actions (Track Delivery, Cancel, Review) */}
+                            <View style={styles.itemActionsRow}>
+                                {item.itemStatus !== 'CANCELLED' && (
+                                    <TouchableOpacity
+                                        style={styles.itemTrackBtn}
+                                        onPress={() => handleOpenItemTrackingModal(item)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Icon name="navigate-circle" size={16} color="#0284C7" />
+                                        <Text style={styles.itemTrackBtnText}>Track Delivery</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {item.itemStatus !== 'CANCELLED' && ['PENDING', 'PENDING_PAYMENT', 'CONFIRMED', 'PROCESSING'].includes(order.orderStatus) && (
+                                    <TouchableOpacity
+                                        style={styles.cancelItemBtn}
+                                        onPress={() => handleCancelItem(item)}
+                                        disabled={isCancelling}
+                                    >
+                                        <Icon name="close-circle-outline" size={16} color="#DC2626" />
+                                        <Text style={styles.cancelItemBtnText}>Cancel Item</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {order.orderStatus === 'DELIVERED' && item.itemStatus !== 'CANCELLED' && (
+                                    <TouchableOpacity
+                                        style={styles.rateProductBtn}
+                                        onPress={() => handleOpenReviewModal(item)}
+                                    >
+                                        <Icon name="star" size={14} color="#F59E0B" />
+                                        <Text style={styles.rateProductBtnText}>Rate & Review Product</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
                     ))}
                 </View>
@@ -1633,6 +1681,292 @@ const OrderDetailsScreen = () => {
                 </View>
             </Modal>
 
+            {/* --- INDIVIDUAL ITEM DELIVERY TRACKING TIMELINE MODAL --- */}
+            <Modal
+                visible={isItemTrackingModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setIsItemTrackingModalVisible(false)}
+            >
+                <View style={styles.trackingModalOverlay}>
+                    <View style={styles.trackingModalContainer}>
+                        {/* Modal Header */}
+                        <View style={styles.trackingModalHeader}>
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <View style={[styles.retTypeIconCircle, { backgroundColor: '#E0F2FE', width: 30, height: 30 }]}>
+                                        <Icon name="location-outline" size={17} color="#0284C7" />
+                                    </View>
+                                    <Text style={styles.trackingModalTitle}>Delivery Tracking</Text>
+                                </View>
+                                <Text style={styles.trackingModalSubtitle}>
+                                    Order #{order?.orderNumber} • Product Journey
+                                </Text>
+                            </View>
+                            <TouchableOpacity 
+                                style={styles.trackingModalCloseBtn}
+                                onPress={() => setIsItemTrackingModalVisible(false)}
+                            >
+                                <Icon name="close" size={20} color="#64748B" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView 
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                        >
+                            {/* Product Snapshot Strip */}
+                            {selectedTrackingItem && (
+                                <View style={styles.modalProductStrip}>
+                                    <Image 
+                                        source={{ uri: selectedTrackingItem.imageUrl ? (selectedTrackingItem.imageUrl.startsWith('http') ? selectedTrackingItem.imageUrl : `https://newapi.earn24.in${selectedTrackingItem.imageUrl}`) : 'https://via.placeholder.com/150' }}
+                                        style={styles.modalProductThumb}
+                                    />
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={styles.modalProductName} numberOfLines={2}>{selectedTrackingItem.productName || 'Product Item'}</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, flexWrap: 'wrap', gap: 6 }}>
+                                            <View style={styles.qtyBadgePill}>
+                                                <Text style={styles.qtyBadgePillText}>Qty: {selectedTrackingItem.quantity || 1}</Text>
+                                            </View>
+                                            <View style={[styles.qtyBadgePill, { backgroundColor: '#DCFCE7' }]}>
+                                                <Text style={[styles.qtyBadgePillText, { color: '#15803D' }]}>
+                                                    ₹{parseFloat(selectedTrackingItem.totalPrice || 0).toFixed(2)}
+                                                </Text>
+                                            </View>
+                                            <View style={[styles.qtyBadgePill, { 
+                                                backgroundColor: selectedTrackingItem.itemStatus === 'DELIVERED' ? '#DCFCE7' : (selectedTrackingItem.itemStatus === 'CANCELLED' ? '#FEE2E2' : '#EFF6FF')
+                                            }]}>
+                                                <Text style={[styles.qtyBadgePillText, { 
+                                                    color: selectedTrackingItem.itemStatus === 'DELIVERED' ? '#15803D' : (selectedTrackingItem.itemStatus === 'CANCELLED' ? '#DC2626' : '#1D4ED8'),
+                                                    fontWeight: '700'
+                                                }]}>
+                                                    {selectedTrackingItem.itemStatus || order?.orderStatus || 'CONFIRMED'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Origin Merchant Hub Card */}
+                            {selectedTrackingItem && (
+                                <View style={styles.hubOriginCard}>
+                                    <View style={styles.hubOriginCardHeader}>
+                                        <View style={styles.hubOriginIconCircle}>
+                                            <Icon name="business-outline" size={18} color="#0D9488" />
+                                        </View>
+                                        <View style={{ flex: 1, marginLeft: 10 }}>
+                                            <Text style={styles.hubOriginCardTitle}>Dispatched From Merchant Hub</Text>
+                                            <Text style={styles.hubOriginLocationText}>
+                                                📍 {selectedTrackingItem.sellerCity ? `${selectedTrackingItem.sellerCity}${selectedTrackingItem.sellerState ? ', ' + selectedTrackingItem.sellerState : ''}` : (selectedTrackingItem.sellerState || 'Regional Warehouse Hub')}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    {selectedTrackingItem.sellerName ? (
+                                        <Text style={styles.hubOriginSellerName}>
+                                            Merchant: <Text style={{ fontWeight: '700', color: '#1E293B' }}>{selectedTrackingItem.sellerName}</Text>
+                                        </Text>
+                                    ) : null}
+                                    {selectedTrackingItem.sellerAddress ? (
+                                        <Text style={styles.hubOriginAddressText} numberOfLines={2}>
+                                            {selectedTrackingItem.sellerAddress}
+                                        </Text>
+                                    ) : null}
+                                </View>
+                            )}
+
+                            {/* Logistics & Courier / Delivery Partner Card */}
+                            {selectedTrackingItem && (
+                                <View style={styles.logisticsPartnerCard}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <Icon name="paper-plane-outline" size={17} color="#2563EB" />
+                                            <Text style={styles.logisticsCardTitle}>Fulfillment & Transit Details</Text>
+                                        </View>
+                                        <View style={styles.modeBadge}>
+                                            <Text style={styles.modeBadgeText}>
+                                                {selectedTrackingItem.trackingNumber ? 'COURIER SHIPMENT' : (selectedTrackingItem.deliveryAgentName ? 'LOCAL DELIVERY' : 'STANDARD LOGISTICS')}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    {selectedTrackingItem.courierName || selectedTrackingItem.trackingNumber ? (
+                                        <View style={styles.awbContainer}>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.courierNameText}>
+                                                    Courier: <Text style={{ fontWeight: '700', color: '#0F172A' }}>{selectedTrackingItem.courierName || 'Shiprocket / Express'}</Text>
+                                                </Text>
+                                                {selectedTrackingItem.trackingNumber ? (
+                                                    <Text style={styles.awbNumberText}>AWB #: <Text style={{ fontWeight: '700', color: '#2563EB' }}>{selectedTrackingItem.trackingNumber}</Text></Text>
+                                                ) : null}
+                                            </View>
+                                            {selectedTrackingItem.trackingNumber && (
+                                                <TouchableOpacity
+                                                    style={styles.awbTrackBtn}
+                                                    onPress={() => handleOpenCourierLink(selectedTrackingItem.trackingNumber, selectedTrackingItem.courierName)}
+                                                    activeOpacity={0.8}
+                                                >
+                                                    <Icon name="open-outline" size={14} color="#FFFFFF" />
+                                                    <Text style={styles.awbTrackBtnText}>Track Live</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    ) : null}
+
+                                    {selectedTrackingItem.deliveryAgentName ? (
+                                        <View style={styles.agentRow}>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.agentNameText}>Rider: <Text style={{ fontWeight: '700' }}>{selectedTrackingItem.deliveryAgentName}</Text></Text>
+                                            </View>
+                                            {selectedTrackingItem.deliveryAgentPhone ? (
+                                                <TouchableOpacity
+                                                    style={styles.callAgentBtn}
+                                                    onPress={() => handleCallAgent(selectedTrackingItem.deliveryAgentPhone)}
+                                                >
+                                                    <Icon name="call" size={13} color="#FFFFFF" />
+                                                    <Text style={styles.callAgentBtnText}>Call Rider</Text>
+                                                </TouchableOpacity>
+                                            ) : null}
+                                        </View>
+                                    ) : null}
+
+                                    {/* Destination summary */}
+                                    {order?.shippingAddress && (
+                                        <View style={styles.destinationRow}>
+                                            <Icon name="home-outline" size={14} color="#64748B" />
+                                            <Text style={styles.destinationText} numberOfLines={1}>
+                                                Deliver to: {order.shippingAddress.city || ''}, {order.shippingAddress.state || ''} - {order.shippingAddress.pincode || ''}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                            )}
+
+                            {/* Step-by-Step Delivery Milestones */}
+                            {selectedTrackingItem && (() => {
+                                const st = (selectedTrackingItem.itemStatus || order?.orderStatus || 'CONFIRMED').toUpperCase();
+                                const isItemDelivered = st === 'DELIVERED';
+                                const isItemCancelled = st === 'CANCELLED';
+                                const isShipped = ['SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(st);
+                                const isOutForDelivery = ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(st);
+                                const isProcessing = ['PROCESSING', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(st);
+
+                                const steps = [
+                                    {
+                                        stepNum: 1,
+                                        title: 'Order Confirmed',
+                                        subtitle: 'Order received and verified by Earn24',
+                                        time: order?.createdAt ? moment(order.createdAt).format('D MMM YYYY, h:mm a') : '',
+                                        isDone: true,
+                                        isActive: false,
+                                        icon: 'checkmark-circle-outline'
+                                    },
+                                    {
+                                        stepNum: 2,
+                                        title: 'Packed & Processed',
+                                        subtitle: selectedTrackingItem.sellerName 
+                                            ? `Prepared at merchant store (${selectedTrackingItem.sellerName})` 
+                                            : `Product quality verified and packed for dispatch`,
+                                        time: selectedTrackingItem.pickedUpAt ? moment(selectedTrackingItem.pickedUpAt).format('D MMM YYYY, h:mm a') : '',
+                                        isDone: isProcessing && !isItemCancelled,
+                                        isActive: ['PENDING', 'CONFIRMED'].includes(st) && !isItemCancelled,
+                                        icon: 'cube-outline'
+                                    },
+                                    {
+                                        stepNum: 3,
+                                        title: 'Dispatched & In Transit',
+                                        subtitle: selectedTrackingItem.sellerCity 
+                                            ? `Departed from ${selectedTrackingItem.sellerCity}${selectedTrackingItem.sellerState ? ', ' + selectedTrackingItem.sellerState : ''} origin hub` 
+                                            : (selectedTrackingItem.courierName ? `Handed over to ${selectedTrackingItem.courierName}` : 'Departed sorting facility and on the way'),
+                                        time: '',
+                                        isDone: isShipped && !isItemCancelled,
+                                        isActive: st === 'PROCESSING' && !isItemCancelled,
+                                        icon: 'airplane-outline'
+                                    },
+                                    {
+                                        stepNum: 4,
+                                        title: 'Out for Delivery',
+                                        subtitle: selectedTrackingItem.deliveryAgentName 
+                                            ? `Assigned to delivery agent ${selectedTrackingItem.deliveryAgentName}` 
+                                            : 'Arrived at your regional center and out for doorstep delivery',
+                                        time: '',
+                                        isDone: isOutForDelivery && !isItemCancelled,
+                                        isActive: ['SHIPPED', 'IN_TRANSIT'].includes(st) && !isItemCancelled,
+                                        icon: 'bicycle-outline'
+                                    },
+                                    {
+                                        stepNum: 5,
+                                        title: isItemCancelled ? 'Order Item Cancelled' : 'Delivered',
+                                        subtitle: isItemCancelled 
+                                            ? `Cancelled${selectedTrackingItem.cancellationReason ? ': ' + selectedTrackingItem.cancellationReason : ''}`
+                                            : (isItemDelivered 
+                                                ? `Safely delivered to you${selectedTrackingItem.deliveredAt ? ' on ' + moment(selectedTrackingItem.deliveredAt).format('D MMM YYYY, h:mm a') : ''}` 
+                                                : 'Pending final doorstep arrival'),
+                                        time: selectedTrackingItem.deliveredAt ? moment(selectedTrackingItem.deliveredAt).format('D MMM YYYY, h:mm a') : (selectedTrackingItem.cancelledAt ? moment(selectedTrackingItem.cancelledAt).format('D MMM YYYY, h:mm a') : ''),
+                                        isDone: isItemDelivered || isItemCancelled,
+                                        isActive: st === 'OUT_FOR_DELIVERY',
+                                        isError: isItemCancelled,
+                                        icon: isItemCancelled ? 'close-circle-outline' : 'home-outline'
+                                    }
+                                ];
+
+                                return (
+                                    <View style={styles.modalTimelineCard}>
+                                        <Text style={styles.modalTimelineCardTitle}>Milestone Journey</Text>
+                                        <View style={{ marginTop: 16 }}>
+                                            {steps.map((step, idx) => {
+                                                const isLast = idx === steps.length - 1;
+                                                const circleBg = step.isError ? '#DC2626' : (step.isDone ? '#0CA201' : (step.isActive ? '#0284C7' : '#E2E8F0'));
+                                                const iconColor = (step.isDone || step.isActive || step.isError) ? '#FFFFFF' : '#94A3B8';
+                                                const lineDone = step.isDone && !step.isError;
+
+                                                return (
+                                                    <View key={step.stepNum} style={styles.auditTimelineRow}>
+                                                        <View style={styles.auditTimelineLeftCol}>
+                                                            <View style={[styles.auditTimelineNode, { backgroundColor: circleBg }]}>
+                                                                <Icon 
+                                                                    name={step.isDone ? "checkmark" : (step.isError ? "close" : (step.isActive ? step.icon : "ellipse"))} 
+                                                                    size={12} 
+                                                                    color={iconColor} 
+                                                                />
+                                                            </View>
+                                                            {!isLast && (
+                                                                <View style={[styles.auditTimelineConnector, { backgroundColor: lineDone ? '#0CA201' : '#E2E8F0' }]} />
+                                                            )}
+                                                        </View>
+
+                                                        <View style={[styles.auditTimelineRightCol, isLast && { paddingBottom: 0 }]}>
+                                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                                <Text style={[styles.auditStepTitle, step.isActive && { color: '#0284C7' }, step.isError && { color: '#DC2626' }]}>
+                                                                    {step.title}
+                                                                </Text>
+                                                                {step.time ? (
+                                                                    <Text style={styles.auditStepTime}>{step.time}</Text>
+                                                                ) : null}
+                                                            </View>
+                                                            <Text style={styles.auditStepSub}>{step.subtitle}</Text>
+                                                        </View>
+                                                    </View>
+                                                );
+                                            })}
+                                        </View>
+                                    </View>
+                                );
+                            })()}
+                        </ScrollView>
+
+                        {/* Bottom Close Button */}
+                        <TouchableOpacity 
+                            style={[styles.trackingModalCloseBar, { backgroundColor: '#0284C7' }]}
+                            onPress={() => setIsItemTrackingModalVisible(false)}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.trackingModalCloseBarText}>Close Tracking</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <AlertModal />
         </SafeAreaView>
     );
@@ -2211,6 +2545,189 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 14,
         fontWeight: '700',
+    },
+    itemOriginRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0FDFA',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 6,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#CCFBF1',
+    },
+    itemOriginText: {
+        fontSize: 11,
+        color: '#0F766E',
+        marginLeft: 6,
+        flex: 1,
+    },
+    itemActionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    itemTrackBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#EFF6FF',
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#BFDBFE',
+    },
+    itemTrackBtnText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#0284C7',
+        marginLeft: 5,
+    },
+    hubOriginCard: {
+        backgroundColor: '#F0FDFA',
+        padding: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#CCFBF1',
+        marginTop: 12,
+    },
+    hubOriginCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    hubOriginIconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#CCFBF1',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    hubOriginCardTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#0F766E',
+    },
+    hubOriginLocationText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#134E4A',
+        marginTop: 2,
+    },
+    hubOriginSellerName: {
+        fontSize: 12,
+        color: '#334155',
+        marginTop: 6,
+    },
+    hubOriginAddressText: {
+        fontSize: 11,
+        color: '#64748B',
+        marginTop: 2,
+    },
+    logisticsPartnerCard: {
+        backgroundColor: '#F8FAFC',
+        padding: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginTop: 10,
+    },
+    logisticsCardTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#1E293B',
+        marginLeft: 6,
+    },
+    modeBadge: {
+        backgroundColor: '#EFF6FF',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    modeBadgeText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#2563EB',
+    },
+    awbContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#FFFFFF',
+        padding: 8,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginTop: 6,
+    },
+    courierNameText: {
+        fontSize: 12,
+        color: '#475569',
+    },
+    awbNumberText: {
+        fontSize: 11,
+        color: '#64748B',
+        marginTop: 2,
+    },
+    awbTrackBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#2563EB',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 6,
+    },
+    awbTrackBtnText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginLeft: 4,
+    },
+    agentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#FFFFFF',
+        padding: 8,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginTop: 6,
+    },
+    agentNameText: {
+        fontSize: 12,
+        color: '#1E293B',
+    },
+    callAgentBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#16A34A',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 6,
+    },
+    callAgentBtnText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginLeft: 4,
+    },
+    destinationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+    },
+    destinationText: {
+        fontSize: 11,
+        color: '#64748B',
+        marginLeft: 6,
+        flex: 1,
     },
 });
 
