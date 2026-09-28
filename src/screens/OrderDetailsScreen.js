@@ -769,17 +769,23 @@ const OrderDetailsScreen = () => {
                     );
                 })}
 
-                {/* --- FLIPKART-STYLE VERTICAL TIMELINE TRACKER --- */}
+                {/* --- ORDER INFO HEADER CARD --- */}
                 <View style={styles.section}>
                     <View style={styles.headerRow}>
-                        <Text style={styles.orderIdText}>Order ID: {order.orderNumber}</Text>
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                            <Text style={styles.orderIdText}>Order ID: {order.orderNumber}</Text>
+                            {order.createdAt ? (
+                                <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+                                    Placed on {moment(order.createdAt).format('D MMM YYYY, h:mm a')}
+                                </Text>
+                            ) : null}
+                        </View>
                         <View style={[styles.orderStatusBadge, { backgroundColor: orderStatusInfo.bg, borderColor: orderStatusInfo.border }]}>
                             <Text style={[styles.orderStatusBadgeText, { color: orderStatusInfo.color }]}>
                                 {orderStatusInfo.label}
                             </Text>
                         </View>
                     </View>
-                    <VerticalTimelineTracker order={order} />
                 </View>
 
                 {/* --- 7-DAY BV & CASHBACK PROTECTION LOCK INDICATOR BANNER --- */}

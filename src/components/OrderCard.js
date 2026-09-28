@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import moment from 'moment';
 
 const getStatusStyle = (status) => {
@@ -48,13 +49,25 @@ const OrderCard = ({ order, onPress }) => {
         ? (rawImg.startsWith('http') ? rawImg : `https://newapi.earn24.in${rawImg}`)
         : 'https://via.placeholder.com/150';
 
+    const totalItems = parseInt(order.total_items || 1, 10);
+    const itemsLabel = totalItems > 1 
+        ? `${totalItems} Items • ${order.first_item_name || 'Items'} +${totalItems - 1} more`
+        : (order.first_item_name || '1 Item');
+
     return (
         <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-            <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+            <View style={styles.imageContainer}>
+                <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+                {totalItems > 1 && (
+                    <View style={styles.itemBadge}>
+                        <Text style={styles.itemBadgeText}>{totalItems} Items</Text>
+                    </View>
+                )}
+            </View>
             <View style={styles.details}>
                 <View style={styles.headerRow}>
                     <Text style={styles.orderNumber} numberOfLines={1}>
-                        {order.first_item_name || order.order_number || 'Order'}
+                        Order #{order.order_number || order.id}
                     </Text>
                     <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor }]}>
                         <Text style={[styles.statusText, { color: statusStyle.color }]} numberOfLines={1}>
@@ -62,11 +75,17 @@ const OrderCard = ({ order, onPress }) => {
                         </Text>
                     </View>
                 </View>
-                <Text style={styles.date} numberOfLines={1}>
-                    Order: {order.order_number || ''} • {moment(order.created_at).format('D MMM, YYYY')}
+                <Text style={styles.itemsSummary} numberOfLines={1}>
+                    {itemsLabel}
                 </Text>
-                <Text style={styles.total}>Total: ₹{parseFloat(order.total_amount || 0).toFixed(2)}</Text>
+                <View style={styles.footerRow}>
+                    <Text style={styles.date} numberOfLines={1}>
+                        {moment(order.created_at).format('D MMM, YYYY')}
+                    </Text>
+                    <Text style={styles.total}>Total: ₹{parseFloat(order.total_amount || 0).toFixed(2)}</Text>
+                </View>
             </View>
+            <Icon name="chevron-forward" size={16} color="#94A3B8" style={{ marginLeft: 6 }} />
         </TouchableOpacity>
     );
 };
@@ -76,7 +95,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         backgroundColor: '#fff', 
-        padding: 14, 
+        padding: 12, 
         borderRadius: 12, 
         marginBottom: 12, 
         elevation: 2, 
@@ -85,13 +104,32 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08, 
         shadowRadius: 4,
     },
-    image: { 
-        width: 60, 
-        height: 60, 
-        borderRadius: 8, 
-        marginRight: 12, 
-        backgroundColor: '#f8f9fa',
+    imageContainer: {
+        position: 'relative',
+        marginRight: 12,
         flexShrink: 0,
+    },
+    image: { 
+        width: 64, 
+        height: 64, 
+        borderRadius: 8, 
+        backgroundColor: '#f8f9fa',
+    },
+    itemBadge: {
+        position: 'absolute',
+        bottom: -4,
+        left: 4,
+        right: 4,
+        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+        borderRadius: 4,
+        paddingVertical: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    itemBadgeText: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: '#FFFFFF',
     },
     details: { 
         flex: 1, 
@@ -107,15 +145,25 @@ const styles = StyleSheet.create({
     orderNumber: { 
         flex: 1,
         minWidth: 0,
-        fontSize: 15, 
+        fontSize: 14, 
         fontWeight: 'bold', 
-        color: '#1e293b',
-        marginRight: 8,
+        color: '#0F172A',
+        marginRight: 6,
+    },
+    itemsSummary: {
+        fontSize: 13,
+        color: '#475569',
+        fontWeight: '500',
+        marginBottom: 6,
+    },
+    footerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     date: { 
         fontSize: 12, 
         color: '#64748b', 
-        marginBottom: 4,
     },
     total: { 
         fontSize: 14, 
