@@ -287,9 +287,10 @@ const SearchResultsScreen = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const performSearch = useCallback(
-    async (pageNum = 1, isNewSearch = true, overrideQuery = null) => {
+    async (pageNum = 1, isNewSearch = true, overrideQuery = null, overrideSort = null) => {
       const activeQuery = overrideQuery !== null ? overrideQuery : searchQuery;
-      console.log('[DEBUG performSearch] Running search for:', activeQuery, 'pincode:', pincode, 'page:', pageNum);
+      const activeSort = overrideSort !== null ? overrideSort : appliedSortOption;
+      console.log('[DEBUG performSearch] Running search for:', activeQuery, 'pincode:', pincode, 'page:', pageNum, 'sortBy:', activeSort);
       if (isNewSearch) {
         setIsLoading(true);
         setProducts([]);
@@ -302,7 +303,7 @@ const SearchResultsScreen = () => {
         const searchPayload = {
           query: activeQuery,
           pincode: pincode && pincode !== 'undefined' && pincode !== 'null' ? pincode : 'ALL',
-          sortBy: appliedSortOption,
+          sortBy: activeSort,
           page: pageNum,
         };
         if (appliedFilters && typeof appliedFilters === 'object') {
@@ -363,6 +364,8 @@ const SearchResultsScreen = () => {
   const handleApplySort = selectedOption => {
     setAppliedSortOption(selectedOption);
     setIsSortModalVisible(false);
+    setPage(1);
+    performSearch(1, true, null, selectedOption);
   };
 
   const handleLoadMore = () => {

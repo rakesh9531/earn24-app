@@ -943,23 +943,34 @@ const ProductDetailsScreen = () => {
           {/* Ratings & Reviews Collapsible Drawer (Open by Default) */}
           <AccordionSection 
             title={
-              <Text style={styles.accordionTitle}>
-                Ratings & Reviews <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }}>({reviewsData.avg_rating || '0'} <Text style={{ color: '#F59E0B', fontWeight: '800' }}>★</Text> • {reviewsData.total_reviews || 0} Ratings)</Text>
-              </Text>
+              (!reviewsData.total_reviews || Number(reviewsData.total_reviews) === 0) ? (
+                <Text style={styles.accordionTitle}>Ratings and reviews</Text>
+              ) : (
+                <Text style={styles.accordionTitle}>
+                  Ratings & Reviews <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600' }}>({reviewsData.avg_rating || '0'} <Text style={{ color: '#F59E0B', fontWeight: '800' }}>★</Text> • {reviewsData.total_reviews} Ratings)</Text>
+                </Text>
+              )
             } 
             defaultOpen={true}
           >
-            <View style={{ paddingTop: 6 }}>
-              {/* Rating Summary Score & Progress Bars */}
-              <View style={styles.ratingSummaryRow}>
-                {/* Score Badge */}
-                <View style={styles.scoreBox}>
-                  <Text style={styles.scoreText}>{reviewsData.avg_rating || '4.5'}</Text>
-                  <View style={styles.starRow}>
-                    {[1,2,3,4,5].map(s => (
-                      <Icon key={s} name={s <= Math.round(reviewsData.avg_rating || 5) ? "star" : "star-outline"} size={14} color="#F59E0B" />
-                    ))}
-                  </View>
+            {(!reviewsData.total_reviews || Number(reviewsData.total_reviews) === 0) ? (
+              <View style={{ paddingVertical: 14 }}>
+                <Text style={{ fontSize: 15, color: '#334155', fontWeight: '500' }}>
+                  Be the first to rate the product
+                </Text>
+              </View>
+            ) : (
+              <View style={{ paddingTop: 6 }}>
+                {/* Rating Summary Score & Progress Bars */}
+                <View style={styles.ratingSummaryRow}>
+                  {/* Score Badge */}
+                  <View style={styles.scoreBox}>
+                    <Text style={styles.scoreText}>{reviewsData.avg_rating || '0.0'}</Text>
+                    <View style={styles.starRow}>
+                      {[1,2,3,4,5].map(s => (
+                        <Icon key={s} name={s <= Math.round(Number(reviewsData.avg_rating) || 0) ? "star" : "star-outline"} size={14} color="#F59E0B" />
+                      ))}
+                    </View>
                   <Text style={styles.totalReviewsCount}>{reviewsData.total_reviews || 0} Ratings & Reviews</Text>
                 </View>
 
@@ -1065,6 +1076,7 @@ const ProductDetailsScreen = () => {
                 </View>
               )}
             </View>
+            )}
           </AccordionSection>
         </View>
 
