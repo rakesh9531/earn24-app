@@ -106,7 +106,7 @@ const ProductCard = ({ product, onPress }) => {
 
       <View style={styles.cardContent}>
         <Text style={styles.brandName} numberOfLines={1}>
-          {product.brand_name || 'Generic'} {product.seller_name ? `• ${product.seller_name}` : ''}
+          {product.brand_name || 'Generic'} {(product.seller_name || product.merchant_business_name) ? `• ${(product.seller_name || product.merchant_business_name)}` : ''}
         </Text>
         <Text style={styles.productName} numberOfLines={2}>
           {product.name}

@@ -284,15 +284,35 @@ const ProductDetailsScreen = () => {
   const insets = useSafeAreaInsets();
   const favContext = useFavorites();
 
+  const resolveSellerName = () => {
+    const rawName = (rawProduct?.seller_name || rawProduct?.merchant_business_name || '').trim();
+    const fetchedName = (fetchedProduct?.seller_name || fetchedProduct?.merchant_business_name || '').trim();
+
+    const isGeneric = (name) => !name || name === 'Earn24 Official' || name === 'Earn24' || name === 'Merchant' || name === 'Generic';
+
+    if (!isGeneric(fetchedName)) {
+      return fetchedName;
+    }
+    if (!isGeneric(rawName)) {
+      return rawName;
+    }
+    return fetchedName || rawName || 'Earn24 Official';
+  };
+
+  const resolvedSeller = resolveSellerName();
   const product = fetchedProduct ? { 
     ...rawProduct, 
     ...fetchedProduct,
-    seller_name: fetchedProduct.seller_name || rawProduct?.seller_name || fetchedProduct.merchant_business_name || rawProduct?.merchant_business_name || 'Earn24 Official',
-    merchant_business_name: fetchedProduct.merchant_business_name || rawProduct?.merchant_business_name || fetchedProduct.seller_name || rawProduct?.seller_name,
+    seller_name: resolvedSeller,
+    merchant_business_name: resolvedSeller,
     variants: (Array.isArray(fetchedProduct.variants) && fetchedProduct.variants.length > 0)
       ? fetchedProduct.variants
       : (Array.isArray(rawProduct?.variants) && rawProduct.variants.length > 0 ? rawProduct.variants : (fetchedProduct?.variants || rawProduct?.variants || []))
-  } : (rawProduct || {});
+  } : {
+    ...(rawProduct || {}),
+    seller_name: resolvedSeller,
+    merchant_business_name: resolvedSeller,
+  };
   const currentProductId = product.product_id || product.id;
   const currentOfferId = rawProduct?.offer_id || rawProduct?.seller_product_id || rawProduct?.sp_id || product?.offer_id || product?.seller_product_id || product?.sp_id;
 
