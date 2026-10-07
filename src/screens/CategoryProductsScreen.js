@@ -181,7 +181,14 @@ const CategoryProductsScreen = ({ route, navigation }) => {
           <View style={styles.productCardContainer}>
             <ProductCard
               product={item}
-              onPress={() => navigation.navigate('ProductDetails', { product: item })}
+              onPress={() => navigation.navigate('ProductDetails', {
+                product: {
+                  ...item,
+                  id: item.id || item.product_id,
+                  product_id: item.product_id || item.id,
+                  variants: Array.isArray(item.variants) ? item.variants : []
+                }
+              })}
             />
           </View>
         )}

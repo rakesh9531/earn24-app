@@ -508,8 +508,25 @@ const ProductDetailsScreen = () => {
     const fetchFullProduct = async () => {
       if (!currentProductId) return;
       try {
-        const res = await getProductById(currentProductId, false, currentOfferId);
+        let res = await getProductById(currentProductId, false, currentOfferId);
         console.log('[ProductDetailsScreen DEBUG fetchFullProduct]:', currentProductId, currentOfferId, res?.data);
+
+        // Fallback: If offer-specific query returns 0 variants, fetch master product without offer filter
+        if (res && res.status && res.data && currentOfferId) {
+          const hasOfferVars = Array.isArray(res.data.variants) && res.data.variants.length > 0;
+          if (!hasOfferVars) {
+            try {
+              const masterRes = await getProductById(currentProductId, false, null);
+              if (masterRes && masterRes.status && masterRes.data && Array.isArray(masterRes.data.variants) && masterRes.data.variants.length > 0) {
+                res.data.variants = masterRes.data.variants;
+                res.data.has_variants = true;
+              }
+            } catch (fallbackErr) {
+              console.warn('[ProductDetailsScreen] Master variant fallback fetch failed:', fallbackErr);
+            }
+          }
+        }
+
         if (res && res.status && res.data) {
           setFetchedProduct(res.data);
           recordProductView({
@@ -542,7 +559,7 @@ const ProductDetailsScreen = () => {
       setIsRelatedLoading(false);
     }
 
-  }, [currentProductId, currentOfferId, pincode, product.name, navigation, isFav]);
+  }, [currentProductId, currentOfferId, pincode, rawProduct?.name, navigation, isFav]);
 
   const handleAddToCart = async () => {
     if (isAddingToCart || isBuyingNow) return;
