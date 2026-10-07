@@ -698,11 +698,35 @@ const ProductDetailsScreen = () => {
                   const mainVariantTitle = (() => {
                     if (product.variant_title && product.variant_title.trim().length > 0) return product.variant_title;
                     if (product.variant_name && product.variant_name.trim().length > 0) return product.variant_name;
-                    const colSize = [product.color, product.size].filter(Boolean).join(' / ');
-                    if (colSize && colSize.trim().length > 0) return colSize;
-                    if (Array.isArray(product.attributes) && product.attributes.length > 0) {
-                      const attrVals = product.attributes.map(a => (typeof a === 'object' && a !== null ? (a.value || a.attribute_value || '') : String(a))).filter(Boolean).join(' / ');
-                      if (attrVals && attrVals.trim().length > 0) return attrVals;
+                    const directColSize = [product.color, product.size].filter(Boolean).join(' / ');
+                    if (directColSize && directColSize.trim().length > 0) return directColSize;
+
+                    let parsedAttrs = [];
+                    if (Array.isArray(product.attributes)) {
+                      parsedAttrs = product.attributes;
+                    } else if (typeof product.attributes === 'string' && product.attributes.trim().length > 0) {
+                      try { parsedAttrs = JSON.parse(product.attributes); } catch (e) { parsedAttrs = []; }
+                    }
+
+                    if (Array.isArray(parsedAttrs) && parsedAttrs.length > 0) {
+                      const colorAttr = parsedAttrs.find(a => {
+                        const name = (a.attribute_name || a.name || '').toLowerCase();
+                        return name.includes('color') || name.includes('colour');
+                      })?.value;
+
+                      const sizeAttr = parsedAttrs.find(a => {
+                        const name = (a.attribute_name || a.name || '').toLowerCase();
+                        return name.includes('size') || name.includes('storage') || name.includes('capacity') || name.includes('ram') || name.includes('memory') || name.includes('variant');
+                      })?.value;
+
+                      const keySpecs = [colorAttr, sizeAttr].filter(Boolean).join(' / ');
+                      if (keySpecs && keySpecs.trim().length > 0) return keySpecs;
+
+                      const allAttrVals = parsedAttrs
+                        .map(a => (typeof a === 'object' && a !== null ? (a.value || a.attribute_value || '') : String(a)))
+                        .filter(Boolean)
+                        .join(' / ');
+                      if (allAttrVals && allAttrVals.trim().length > 0) return allAttrVals;
                     }
                     return 'Main Offer';
                   })();
