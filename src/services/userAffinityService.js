@@ -38,6 +38,10 @@ export const recordProductView = async (product) => {
       offer_id: product.offer_id || product.seller_product_id || product.sp_id,
       seller_product_id: product.seller_product_id || product.offer_id || product.sp_id,
       seller_name: product.seller_name || product.merchant_business_name,
+      // Product variants preservation
+      variants: Array.isArray(product.variants) ? product.variants : [],
+      has_variants: Boolean(product.has_variants || (Array.isArray(product.variants) && product.variants.length > 0)),
+      gallery_image_urls: product.gallery_image_urls || [],
       // Warranty specifications
       warranty_type: product.warranty_type,
       warranty_period: product.warranty_period,

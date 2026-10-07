@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getRecentlyViewed, clearRecentlyViewed } from '../services/userAffinityService';
+import { productService } from '../services/productService';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
@@ -123,6 +124,27 @@ const RecentlyViewedSection = ({ navigation, refreshKey }) => {
     }
   };
 
+  const handleProductPress = async (item) => {
+    const pid = item.productId || item.product_id || item.id;
+    const offerId = item.offer_id || item.seller_product_id;
+    if (Array.isArray(item.variants) && item.variants.length > 0) {
+      navigation.navigate('ProductDetails', { product: item });
+      return;
+    }
+    if (pid && productService && productService.getProductById) {
+      try {
+        const res = await productService.getProductById(pid, false, offerId);
+        if (res && res.status && res.data) {
+          navigation.navigate('ProductDetails', { product: res.data });
+          return;
+        }
+      } catch (e) {
+        console.warn('Error fetching fresh product for recently viewed press', e);
+      }
+    }
+    navigation.navigate('ProductDetails', { product: item });
+  };
+
   if (!items || items.length === 0) {
     return null; // Gracefully hidden if no items viewed
   }
@@ -148,7 +170,7 @@ const RecentlyViewedSection = ({ navigation, refreshKey }) => {
         renderItem={({ item }) => (
           <RecentlyViewedCard
             item={item}
-            onPress={() => navigation.navigate('ProductDetails', { product: item })}
+            onPress={() => handleProductPress(item)}
             onAddToCart={() => handleAddToCart(item)}
             isAdding={addingId === item.id}
           />

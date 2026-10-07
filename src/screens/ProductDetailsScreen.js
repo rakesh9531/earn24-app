@@ -519,6 +519,7 @@ const ProductDetailsScreen = () => {
             product_id: currentProductId,
             offer_id: currentOfferId || res.data.offer_id || res.data.seller_product_id,
             seller_product_id: currentOfferId || res.data.seller_product_id || res.data.offer_id,
+            variants: (Array.isArray(res.data.variants) && res.data.variants.length > 0) ? res.data.variants : (product.variants || []),
           });
         }
       } catch (e) {
@@ -527,7 +528,13 @@ const ProductDetailsScreen = () => {
     };
 
     if (currentProductId) {
-      recordProductView({ ...product, id: currentProductId, product_id: currentProductId, offer_id: currentOfferId });
+      recordProductView({ 
+        ...product, 
+        id: currentProductId, 
+        product_id: currentProductId, 
+        offer_id: currentOfferId,
+        variants: product.variants || []
+      });
       fetchFullProduct();
       fetchRelated();
       fetchReviews();
