@@ -852,7 +852,16 @@ const HomeScreen = ({ navigation }) => {
     <ProductCarousel
       key={item.id}
       section={item}
-      onProductPress={(product) => navigation.navigate('ProductDetails', { product })}
+      onProductPress={(product) => navigation.navigate('ProductDetails', {
+        product: {
+          ...product,
+          id: product.id || product.product_id,
+          product_id: product.product_id || product.id,
+          seller_name: product.seller_name || product.merchant_business_name || 'Earn24 Official',
+          merchant_business_name: product.merchant_business_name || product.seller_name || 'Earn24 Official',
+          variants: Array.isArray(product.variants) ? product.variants : []
+        }
+      })}
       onSeeAllPress={(s) => navigation.navigate('CategoryProducts', {
         categoryId: s.category_id || s.parent_category_id || selectedCategoryId,
         categoryName: s.title.replace('Best in ', '')

@@ -288,12 +288,11 @@ const ProductDetailsScreen = () => {
     const rawName = (rawProduct?.seller_name || rawProduct?.merchant_business_name || '').trim();
     const fetchedName = (fetchedProduct?.seller_name || fetchedProduct?.merchant_business_name || '').trim();
 
-    const isGeneric = (name) => !name || name === 'Earn24 Official' || name === 'Earn24' || name === 'Merchant' || name === 'Generic';
-
-    if (!isGeneric(fetchedName)) {
+    // Prefer specific merchant name, or Earn24 / Earn24 Official (the official admin store)
+    if (fetchedName && fetchedName !== 'Merchant' && fetchedName !== 'Generic') {
       return fetchedName;
     }
-    if (!isGeneric(rawName)) {
+    if (rawName && rawName !== 'Merchant' && rawName !== 'Generic') {
       return rawName;
     }
     return fetchedName || rawName || 'Earn24 Official';
@@ -684,7 +683,9 @@ const ProductDetailsScreen = () => {
 
         {/* Main Info Section */}
         <View style={styles.mainInfoContainer}>
-          <Text style={styles.brandName}>{product.brand_name || 'Brand'}</Text>
+          <Text style={styles.brandName}>
+            {product.brand_name || 'Brand'} • Sold by: <Text style={{ color: '#0CA201', fontWeight: '700' }}>{resolvedSeller || product.seller_name || 'Earn24 Official'}</Text>
+          </Text>
           <View style={styles.titleRow}>
             <Text style={styles.productName}>{product.name || 'Product Name'}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
