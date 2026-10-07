@@ -86,26 +86,33 @@ const CartIcon = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 5,
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   badgeContainer: {
     position: 'absolute',
-    right: -6,
-    top: -3,
-    backgroundColor: '#EF4444', // A bright red for attention
-    borderRadius: 12,
-    minWidth: 24, // Use minWidth to handle larger numbers like 10+
-    height: 24,
-    paddingHorizontal: 4, // Add some padding for the text
+    right: 0,
+    top: 0,
+    backgroundColor: '#EF4444',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF', // White border to stand out
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    zIndex: 10,
+    elevation: 3,
   },
   badgeText: {
-    color: 'white',
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 10,
     fontWeight: 'bold',
+    textAlign: 'center',
+    includeFontPadding: false,
+    lineHeight: 12,
   },
 });
 

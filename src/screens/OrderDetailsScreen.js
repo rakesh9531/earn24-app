@@ -912,7 +912,8 @@ const OrderDetailsScreen = () => {
                     <Text style={styles.sectionTitle}>Shipping Address</Text>
                     {order.shippingAddress ? (
                         <View style={styles.addressCard}>
-                            <Text style={styles.addressName}>{order.shippingAddress.fullName || 'Customer'}</Text>
+                            <Text style={styles.addressCustomerLabel}>Customer</Text>
+                            <Text style={styles.addressName}>{order.customerName || order.shippingAddress.fullName || order.customer_name || 'Customer'}</Text>
                             <Text style={styles.addressText}>{`${order.shippingAddress.addressLine1 || ''}${order.shippingAddress.addressLine2 ? ', ' + order.shippingAddress.addressLine2 : ''}`}</Text>
                             <Text style={styles.addressText}>{`${order.shippingAddress.city || ''}, ${order.shippingAddress.state || ''} - ${order.shippingAddress.pincode || ''}`}</Text>
                         </View>
@@ -986,24 +987,6 @@ const OrderDetailsScreen = () => {
                         </View>
                     );
                 })()}
-
-                {/* --- CANCEL ORDER BUTTON --- */}
-                {['PENDING', 'PENDING_PAYMENT', 'CONFIRMED'].includes(order.orderStatus) && (
-                    <TouchableOpacity 
-                        style={[styles.cancelOrderButton, isCancelling && styles.disabledButton]} 
-                        onPress={() => setIsCancelModalVisible(true)}
-                        disabled={isCancelling}
-                    >
-                        {isCancelling ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                            <>
-                                <Icon name="close-circle-outline" size={20} color="#fff" />
-                                <Text style={styles.cancelOrderButtonText}>Cancel Order</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                )}
 
             </ScrollView>
 
@@ -1993,7 +1976,8 @@ const styles = StyleSheet.create({
     itemQuantity: { fontSize: 12, color: '#6c757d', marginTop: 2 },
     itemPrice: { fontSize: 14, fontWeight: 'bold', color: '#212529' },
     addressCard: { backgroundColor: '#f8f9fa', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e9ecef' },
-    addressName: { fontSize: 14, fontWeight: 'bold', color: '#212529', marginBottom: 4 },
+    addressCustomerLabel: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 2 },
+    addressName: { fontSize: 15, fontWeight: 'bold', color: '#1E293B', marginBottom: 4 },
     addressText: { fontSize: 13, color: '#495057', lineHeight: 18 },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     summaryLabel: { fontSize: 14, color: '#6c757d' },

@@ -117,11 +117,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 18,
+    paddingVertical: 16,
+    width: '100%',
   },
   optionLabel: {
+    flex: 1,
     fontSize: 16,
     color: COLORS.textLight,
+    includeFontPadding: false,
+    marginRight: 12,
   },
   optionLabelSelected: {
     color: COLORS.primary,

@@ -287,6 +287,8 @@ const ProductDetailsScreen = () => {
   const product = fetchedProduct ? { 
     ...rawProduct, 
     ...fetchedProduct,
+    seller_name: fetchedProduct.seller_name || rawProduct?.seller_name || fetchedProduct.merchant_business_name || rawProduct?.merchant_business_name || 'Earn24 Official',
+    merchant_business_name: fetchedProduct.merchant_business_name || rawProduct?.merchant_business_name || fetchedProduct.seller_name || rawProduct?.seller_name,
     variants: (Array.isArray(fetchedProduct.variants) && fetchedProduct.variants.length > 0)
       ? fetchedProduct.variants
       : (Array.isArray(rawProduct?.variants) && rawProduct.variants.length > 0 ? rawProduct.variants : (fetchedProduct?.variants || rawProduct?.variants || []))
