@@ -734,10 +734,6 @@ const ProductDetailsScreen = () => {
                     const sizeMatch = prodName.match(/\b(\d+(?:\.\d+)?\s*(?:GB|TB|MB|g|kg|ml|l|ltr|pcs|pack|cm|mm|m))\b/i);
                     const colorMatch = prodName.match(/\b(Black|White|Red|Blue|Green|Yellow|Pink|Purple|Gold|Silver|Grey|Gray|Orange|Brown|Violet|Cyan|Rose Gold|Midnight|Starlight)\b/i);
 
-                    // Test/Merchant product fallback for iPhone 15
-                    if (product.product_id === 1073 || product.id === 1073 || /iphone\s*15/i.test(prodName)) {
-                      return 'Red 128';
-                    }
 
                     if (colorMatch && sizeMatch) {
                       return `${colorMatch[1]} ${sizeMatch[1].replace(/\s+/g, '')}`;
