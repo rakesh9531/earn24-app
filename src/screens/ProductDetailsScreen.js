@@ -803,7 +803,7 @@ const ProductDetailsScreen = () => {
                 <View style={styles.trustRow}>
                   <Icon name="storefront-outline" size={18} color="#0CA201" style={{ marginRight: 8 }} />
                   <Text style={styles.sellerText}>
-                    Sold by: <Text style={styles.sellerName}>{product.seller_name || product.merchant_business_name || 'Earn24 Official'}</Text>
+                    Sold by: <Text style={styles.sellerName}>{(resolvedSeller || product.seller_name || product.merchant_business_name || 'Earn24 Official').trim() || 'Earn24 Official'}</Text>
                   </Text>
                 </View>
 

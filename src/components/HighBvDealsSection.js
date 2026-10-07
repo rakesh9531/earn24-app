@@ -45,11 +45,9 @@ const HighBvCard = memo(({ item, onPress, onAddToCart, isAdding }) => {
       </View>
 
       <View style={styles.infoContainer}>
-        {item.brand_name ? (
-          <Text style={styles.brandName} numberOfLines={1}>
-            {item.brand_name}
-          </Text>
-        ) : null}
+        <Text style={styles.brandName} numberOfLines={1}>
+          {item.brand_name || 'Generic'} {(item.seller_name || item.merchant_business_name) ? `• ${(item.seller_name || item.merchant_business_name)}` : ''}
+        </Text>
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
         </Text>
