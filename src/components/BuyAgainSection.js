@@ -94,32 +94,45 @@ const BuyAgainSection = ({ navigation, refreshKey }) => {
           if (Array.isArray(ord.items) && ord.items.length > 0) {
             for (const it of ord.items) {
               const pid = it.productId || it.product_id || it.id;
+              const offerId = it.seller_product_id || it.sellerProductId || it.offer_id;
               const key = pid ? String(pid) : it.productName;
               if (key && !seenKeys.has(key)) {
                 seenKeys.add(key);
                 extracted.push({
                   productId: pid,
+                  product_id: pid,
                   id: pid,
+                  offer_id: offerId,
+                  seller_product_id: offerId,
                   name: it.productName || it.name,
                   productName: it.productName || it.name,
                   price: it.price || it.sellingPrice || 0,
+                  selling_price: it.price || it.sellingPrice || 0,
                   imageUrl: it.imageUrl || it.image_url,
+                  main_image_url: it.imageUrl || it.image_url,
                   brandName: it.brandName,
                   minimum_order_quantity: it.minimum_order_quantity || 1,
                 });
               }
             }
           } else if (ord.first_item_name) {
+            const pid = ord.product_id || ord.id;
+            const offerId = ord.seller_product_id || ord.offer_id;
             const key = ord.first_item_name;
             if (!seenKeys.has(key)) {
               seenKeys.add(key);
               extracted.push({
-                id: ord.product_id || ord.id,
-                productId: ord.product_id || ord.id,
+                id: pid,
+                product_id: pid,
+                productId: pid,
+                offer_id: offerId,
+                seller_product_id: offerId,
                 name: ord.first_item_name,
                 productName: ord.first_item_name,
                 price: ord.total_amount || 0,
+                selling_price: ord.total_amount || 0,
                 imageUrl: ord.display_image_url,
+                main_image_url: ord.display_image_url,
                 minimum_order_quantity: 1,
               });
             }
@@ -145,7 +158,7 @@ const BuyAgainSection = ({ navigation, refreshKey }) => {
   );
 
   const handleProductPress = async (item) => {
-    const pid = item.productId || item.id;
+    const pid = item.productId || item.product_id || item.id;
     if (pid && productService && productService.getProductById) {
       try {
         const res = await productService.getProductById(pid);
@@ -162,19 +175,39 @@ const BuyAgainSection = ({ navigation, refreshKey }) => {
   };
 
   const handleReorder = async (item) => {
-    const key = item.productId || item.id;
+    const key = item.productId || item.product_id || item.id;
     if (addingKey) return;
     setAddingKey(key);
 
     try {
+      const pid = item.productId || item.product_id || item.id;
+      let targetOfferId = item.offer_id || item.seller_product_id;
+
+      // If offer_id is missing or equal to pid, fetch fresh details to resolve correct offer_id
+      if ((!targetOfferId || targetOfferId === pid) && pid && productService && productService.getProductById) {
+        try {
+          const res = await productService.getProductById(pid);
+          if (res && res.status && res.data) {
+            targetOfferId = res.data.offer_id || res.data.seller_product_id || targetOfferId;
+          }
+        } catch (err) {
+          console.warn('Error fetching offer for buy again item:', err);
+        }
+      }
+
       const productPayload = {
-        id: item.productId || item.id,
-        name: item.productName || item.name,
-        selling_price: item.price || 0,
-        main_image_url: item.imageUrl,
+        ...item,
+        id: pid,
+        product_id: pid,
+        productId: pid,
+        offer_id: targetOfferId || item.offer_id || item.seller_product_id || pid,
+        seller_product_id: targetOfferId || item.seller_product_id || item.offer_id || pid,
+        name: item.productName || item.name || 'Product',
+        selling_price: item.price || item.selling_price || 0,
+        main_image_url: item.imageUrl || item.main_image_url || '',
         minimum_order_quantity: item.minimum_order_quantity || 1,
       };
-      await addToCart(productPayload, 1);
+      await addToCart(productPayload, productPayload.minimum_order_quantity || 1);
     } catch (e) {
       console.warn('Failed to add re-order item to cart:', e);
     } finally {

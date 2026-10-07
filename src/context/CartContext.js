@@ -1246,7 +1246,12 @@ export const CartProvider = ({ children }) => {
         return [...prev, tempItem];
       });
 
-      await cartService.addItem({ sellerProductId: sellerProductId, variantId: variantId, quantity: quantity });
+      await cartService.addItem({ 
+        sellerProductId: sellerProductId, 
+        variantId: variantId, 
+        quantity: quantity,
+        productId: product ? (product.product_id || product.id) : null
+      });
       await refreshCartData(); 
       return true;
     } catch (error) {

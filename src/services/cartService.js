@@ -5,8 +5,8 @@ const getCart = async (pincode) => {
     return response.data;
 };
 
-const addItem = async ({ sellerProductId, variantId, quantity }) => {
-    const response = await api.post('/cart/add', { sellerProductId, variantId, quantity });
+const addItem = async ({ sellerProductId, variantId, quantity, productId }) => {
+    const response = await api.post('/cart/add', { sellerProductId, variantId, quantity, productId });
     return response.data;
 };
 
