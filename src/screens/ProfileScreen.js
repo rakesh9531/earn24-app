@@ -165,6 +165,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
 import { useAlert } from '../components/CustomAlert';
 import { IMAGE_BASE_URL } from '../config';
+import { authService } from '../services/authService';
 
 const serverUrl = IMAGE_BASE_URL || 'https://newapi.earn24.in';
 
@@ -203,6 +204,26 @@ const ProfileScreen = ({ navigation }) => {
     const [isEditMobileVerified, setIsEditMobileVerified] = useState(false);
     const [isSendingEditMobileOtp, setIsSendingEditMobileOtp] = useState(false);
     const [isVerifyingEditMobileOtp, setIsVerifyingEditMobileOtp] = useState(false);
+
+    // --- Delete Account State ---
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [deleteReason, setDeleteReason] = useState('');
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+    const handleDeleteAccount = async () => {
+        setIsDeletingAccount(true);
+        try {
+            await authService.deleteAccount(deleteReason);
+            setIsDeleteModalVisible(false);
+            showAlert('success', 'Account Deleted', 'Your account has been deleted successfully.');
+            setTimeout(() => {
+                logout();
+            }, 1200);
+        } catch (err) {
+            setIsDeletingAccount(false);
+            showAlert('error', 'Delete Failed', err?.message || 'Failed to delete account. Please try again.');
+        }
+    };
 
     const openEditModal = () => {
         setEditName(user?.full_name || '');
@@ -488,20 +509,29 @@ const ProfileScreen = ({ navigation }) => {
                             <Icon name="log-out-outline" size={22} color="#D32F2F" />
                             <Text style={styles.logoutButtonText}>Log Out Account</Text>
                         </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={styles.deleteButton} 
+                            onPress={() => {
+                                setDeleteReason('');
+                                setIsDeleteModalVisible(true);
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <Icon name="trash-outline" size={18} color="#E53935" />
+                            <Text style={styles.deleteButtonText}>Delete Account</Text>
+                        </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={styles.loggedOutWrapper}>
                         {/* Brand Header Section */}
                         <View style={styles.loggedOutHeader}>
-                            <View style={styles.logoContainer}>
-                                <Image 
-                                    source={require('../assets/images/earn24_logo.png')} 
-                                    style={styles.logoImage} 
-                                    resizeMode="contain" 
-                                />
-                                <Text allowFontScaling={false} style={styles.logoText}>Earn24</Text>
-                            </View>
-                            <Text allowFontScaling={false} style={styles.tagline}>Grow • Earn • Succeed</Text>
+                            {/* Official Wide Brand Logo */}
+                            <Image 
+                                source={require('../assets/images/earn24_brand_logo.png')} 
+                                style={styles.brandLogo} 
+                                resizeMode="contain" 
+                            />
 
                             <Text allowFontScaling={false} style={styles.welcomeTitle}>Welcome to Earn24</Text>
                             <Text allowFontScaling={false} style={styles.welcomeSubtitle}>Please login or sign up to continue</Text>
@@ -720,6 +750,65 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
+
+            {/* DELETE ACCOUNT CONFIRMATION MODAL */}
+            <Modal
+                visible={isDeleteModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => !isDeletingAccount && setIsDeleteModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <View style={{ alignItems: 'center', marginBottom: 16 }}>
+                            <View style={styles.deleteIconBadge}>
+                                <Icon name="trash-outline" size={28} color="#D32F2F" />
+                            </View>
+                            <Text style={styles.deleteModalHeading}>Delete Account?</Text>
+                            <Text style={styles.deleteModalDesc}>
+                                Are you sure you want to delete your account? This action will permanently deactivate your profile and data.
+                            </Text>
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Reason / Remarks (Optional):</Text>
+                            <TextInput
+                                style={[styles.textInput, { height: 75, textAlignVertical: 'top' }]}
+                                placeholder="Tell us why you want to delete your account..."
+                                placeholderTextColor="#999"
+                                value={deleteReason}
+                                onChangeText={setDeleteReason}
+                                multiline={true}
+                                numberOfLines={3}
+                                editable={!isDeletingAccount}
+                            />
+                        </View>
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setIsDeleteModalVisible(false)}
+                                disabled={isDeletingAccount}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: '#D32F2F' }]}
+                                onPress={handleDeleteAccount}
+                                disabled={isDeletingAccount}
+                            >
+                                {isDeletingAccount ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <Text style={styles.saveButtonText}>Delete</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <AlertModal />
         </SafeAreaView>
     );
@@ -761,28 +850,11 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         backgroundColor: '#EBF7EF',
     },
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    logoImage: {
-        width: 36,
-        height: 36,
-        marginRight: 8,
-    },
-    logoText: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: '#00A63E',
-        letterSpacing: -0.5,
-    },
-    tagline: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: '#64748B',
-        marginTop: 2,
-        letterSpacing: 0.5,
+    brandLogo: {
+        width: 220,
+        height: 85,
+        alignSelf: 'center',
+        marginBottom: 6,
     },
     welcomeTitle: {
         fontSize: 22,
@@ -963,6 +1035,41 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
         fontWeight: '700',
+    },
+    deleteButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+        padding: 10,
+    },
+    deleteButtonText: {
+        color: '#E53935',
+        marginLeft: 8,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    deleteIconBadge: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#FFEBEE',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    deleteModalHeading: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#181725',
+        marginBottom: 8,
+    },
+    deleteModalDesc: {
+        fontSize: 14,
+        color: '#7C7C7C',
+        textAlign: 'center',
+        lineHeight: 20,
     },
 });
 

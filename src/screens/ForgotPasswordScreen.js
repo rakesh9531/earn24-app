@@ -55,15 +55,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
           {/* Header Brand Section */}
           <View style={styles.headerSection}>
-            <View style={styles.logoContainer}>
-              <Image 
-                source={require('../assets/images/earn24_logo.png')} 
-                style={styles.logoImage} 
-                resizeMode="contain" 
-              />
-              <Text allowFontScaling={false} style={styles.logoText}>Earn24</Text>
-            </View>
-            <Text allowFontScaling={false} style={styles.tagline}>Grow • Earn • Succeed</Text>
+            {/* Official Wide Brand Logo */}
+            <Image 
+              source={require('../assets/images/earn24_brand_logo.png')} 
+              style={styles.brandLogo} 
+              resizeMode="contain" 
+            />
 
             <Text allowFontScaling={false} style={styles.welcomeTitle}>Forgot Password</Text>
             <Text allowFontScaling={false} style={styles.welcomeSubtitle}>Enter your registered mobile number to reset password</Text>
@@ -161,28 +158,11 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: '#EBF7EF',
   },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoImage: {
-    width: 36,
-    height: 36,
-    marginRight: 8,
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#00A63E',
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#64748B',
-    marginTop: 2,
-    letterSpacing: 0.5,
+  brandLogo: {
+    width: 220,
+    height: 85,
+    alignSelf: 'center',
+    marginBottom: 6,
   },
   welcomeTitle: {
     fontSize: 22,

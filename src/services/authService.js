@@ -124,6 +124,15 @@ const verifyEmailOtp = async (data) => {
     }
 };
 
+const deleteAccount = async (reason) => {
+    try {
+        const response = await api.post('/user/delete-account', { reason });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || new Error('Account deletion failed');
+    }
+};
+
 export const authService = {
     login,
     registerInitiate,
@@ -132,5 +141,6 @@ export const authService = {
     resetPasswordVerify,
     resendOtp,
     sendEmailOtp,
-    verifyEmailOtp
+    verifyEmailOtp,
+    deleteAccount
 };
